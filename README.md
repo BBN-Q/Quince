@@ -1,7 +1,5 @@
 # Quince #
 
-## Quantum user interface for node-constructed experiments. ##
-
 This project is intended as an alternative means of defining the topology of an experiment, and will replace certain functionality of ExpSettingsGUI. Currently envisioned use cases:
 
 1. Graphically construct measurement filter pipelines.

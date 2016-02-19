@@ -1,0 +1,10 @@
+{
+"name": "uW Source",
+"outputs": ["Output"],
+"inputs": [],
+"parameters": [
+	{"name": "Freq.", "type": "float", "increment": 1e9, "snap": true, "low": 0, "high": 20e9, "tip": "Hz"},
+	{"name": "Power", "type": "float", "increment": 1, "snap": true, "low": -20, "high": 20, "tip": "dBm"},
+	{"name": "Address", "type": "str", "tip": "not yet"}
+	]
+}
