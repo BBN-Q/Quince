@@ -3,6 +3,7 @@
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from PyQt5.QtSvg import *
 from functools import partial
 import json
 import sys
@@ -882,6 +883,31 @@ class NodeWindow(QMainWindow):
             ps = self.scene.create_PipelineStart()
             ps.setPos(-300,0)
 
+        svgrend =  QSvgRenderer("quince.svg")
+        self.svgitem = QGraphicsSvgItem()
+        self.svgitem.setSharedRenderer(svgrend)
+        self.scene.addItem(self.svgitem)
+        self.svgitem.setScale(0.5)
+        self.svgitem.setPos(self.svgitem.pos().x()-self.svgitem.boundingRect().width()/4, 
+                            self.svgitem.pos().y()-self.svgitem.boundingRect().height()/4)
+
+        self.draw_i = 0
+        self.increment = 15
+        self.duration = 1600
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.advance)
+        self.timer.start(self.increment)
+
+    def advance(self):
+        if self.draw_i < self.duration:
+            self.svgitem.setOpacity(1.0-float(self.draw_i)/self.duration)
+            self.draw_i += self.increment
+            # self.increment += 0.1
+        else:  
+            self.timer.stop()
+            self.scene.removeItem(self.svgitem)
+
     def load(self):
         path = os.path.dirname(os.path.realpath(__file__))
         fn = QFileDialog.getOpenFileName(self, 'Load Graph', path)
@@ -899,7 +925,6 @@ class NodeWindow(QMainWindow):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
         for n in nodes:
             for k, v in n.parameters.items():
-                # v.proxy_widget.close()
                 pass
 
 if __name__ == "__main__":
