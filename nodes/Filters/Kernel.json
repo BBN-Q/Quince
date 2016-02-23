@@ -1,0 +1,11 @@
+{
+"name": "Boxcar Filter",
+"outputs": ["Integrated"],
+"inputs": ["Data"],
+"parameters": [
+	{"name": "Sample Rate", "type": "float", "increment": 100e6, "snap": true, "low":100e6, "high": 4.0e9, "tip": "Samp/sec"},
+	{"name": "I.F. Freq.", "type": "float", "increment": 1e6, "snap": true, "low": 0, "high": 0.1e9, "tip": "Hz"},
+	{"name": "Boxcar Start", "type": "int", "increment": 1, "snap": true, "low": 1, "high": 50, "tip": "1 is no decimation."},
+	{"name": "Boxcar Stop", "type": "int", "increment": 1, "snap": true, "low": 1, "high": 1000, "tip": "1 is no decimation."}
+	]
+}

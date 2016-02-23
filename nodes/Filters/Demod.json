@@ -1,0 +1,13 @@
+{
+"name": "Digital Demod",
+"outputs": ["Filtered"],
+"inputs": ["Data"],
+"parameters": [
+	{"name": "Sample Rate", "type": "float", "increment": 100e6, "snap": true, "low":100e6, "high": 0.5e9, "tip": "Samp/sec"},
+	{"name": "Bandwidth", "type": "float", "increment": 1e6, "snap": true, "low": 0, "high": 0.1e9, "tip": "Hz"},
+	{"name": "I.F. Freq.", "type": "float", "increment": 1e6, "snap": true, "low": 0, "high": 0.1e9, "tip": "Hz"},
+	{"name": "Decim. 1", "type": "int", "increment": 1, "snap": true, "low": 1, "high": 20, "tip": "1 is no decimation."},
+	{"name": "Decim. 2", "type": "int", "increment": 1, "snap": true, "low": 1, "high": 20, "tip": "1 is no decimation."},
+	{"name": "Decim. 3", "type": "int", "increment": 1, "snap": true, "low": 1, "high": 20, "tip": "1 is no decimation."}
+	]
+}
