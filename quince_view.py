@@ -18,6 +18,8 @@ from quince_node import *
 from quince_wire import *
 from quince_param import *
 
+import quince_graph
+
 class NodeScene(QGraphicsScene):
     """docstring for NodeScene"""
     def __init__(self):
@@ -247,12 +249,24 @@ class NodeWindow(QMainWindow):
         openAction.setStatusTip('Open')
         openAction.triggered.connect(self.load)
 
+        selectAllAction = QAction('&Select All', self)        
+        selectAllAction.setShortcut('Ctrl+A')
+        selectAllAction.setStatusTip('Select All')
+        selectAllAction.triggered.connect(self.select_all)
+
+        selectAllConnectedAction = QAction('&Select All Connected', self)        
+        selectAllConnectedAction.setShortcut('Shift+Ctrl+A')
+        selectAllConnectedAction.setStatusTip('Select All Connected')
+        selectAllConnectedAction.triggered.connect(self.select_all_connected)
 
         fileMenu = self.menuBar().addMenu('&File')
+        editMenu = self.menuBar().addMenu('&Edit')
         helpMenu = self.menuBar().addMenu('&Help')
         fileMenu.addAction(exitAction)
         fileMenu.addAction(saveAction)
         fileMenu.addAction(openAction)
+        editMenu.addAction(selectAllAction)
+        editMenu.addAction(selectAllConnectedAction)
 
         # Setup layout
         self.hbox = QHBoxLayout()
@@ -297,14 +311,33 @@ class NodeWindow(QMainWindow):
     def load(self):
         path = os.path.dirname(os.path.realpath(__file__))
         fn = QFileDialog.getOpenFileName(self, 'Load Graph', path)
-        if fn:
+        if fn[0] != '':
             self.scene.load(fn[0])
 
     def save(self):
         path = os.path.dirname(os.path.realpath(__file__))
         fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
-        if fn:
+        if fn[0] != '':
             self.scene.save(fn[0])
+
+    def select_all(self):
+        nodes = [i for i in self.scene.items() if isinstance(i, Node)]
+        for n in nodes:
+            n.setSelected(True)
+
+    def select_all_connected(self):
+        selected_nodes = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
+        wires = [i for i in self.scene.items() if isinstance(i, Wire)]
+        nodes_by_label = {i.label.toPlainText(): i for i in self.scene.items() if isinstance(i, Node)}
+        graph = quince_graph.generate_graph(wires)
+
+        items = []
+        for sn in selected_nodes:
+            sub_graph_items = quince_graph.items_on_subgraph(graph, sn)
+            items.extend(sub_graph_items)
+
+        for i in items:
+            nodes_by_label[i].setSelected(True)
 
     def cleanup(self):
         # Have to manually close proxy widgets

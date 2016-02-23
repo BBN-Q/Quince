@@ -16,6 +16,7 @@ class Node(QGraphicsRectItem):
         super(Node, self).__init__(parent=parent)
         self.name = name
         self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
 
         self.outputs = {}
@@ -23,6 +24,8 @@ class Node(QGraphicsRectItem):
         self.parameters = {}
 
         self.bg_color = QColor(240,240,240)
+        self.edge_color = QColor(200,200,200)
+        self.edge_color_selected = QColor(247,217,17)
         self.setRect(0,0,100,30)
         self.setBrush(QBrush(self.bg_color))
         self.setPen(QPen(QColor(200,200,200), 0.75))
@@ -31,6 +34,7 @@ class Node(QGraphicsRectItem):
         self.title_bar = QGraphicsRectItem(parent=self)
         self.title_bar.setRect(0,0,100,20)
         self.title_color = QColor(80,80,100)
+        self.title_color_selected = QColor(110,110,80)
         self.title_bar.setBrush(QBrush(self.title_color))
         self.title_bar.setPen(QPen(QColor(200,200,200), 0.75))
         self.label = QGraphicsTextItem(self.name, parent=self)
@@ -162,8 +166,15 @@ class Node(QGraphicsRectItem):
     	return Wire(parent)
 
     def paint(self, painter, options, widget):
+        if self.isSelected():
+            painter.setPen(QPen(self.edge_color_selected, 1.25))
+            self.title_bar.setPen(QPen(self.edge_color_selected, 1.25))
+            self.title_bar.setBrush(QBrush(self.title_color_selected))
+        else:
+            painter.setPen(QPen(self.edge_color, 0.75))
+            self.title_bar.setPen(QPen(self.edge_color, 0.75))
+            self.title_bar.setBrush(QBrush(self.title_color))
         painter.setBrush(QBrush(self.bg_color))
-        painter.setPen(QPen(QColor(200,200,200), 0.75))
         painter.drawRoundedRect(self.rect(), 5.0, 5.0)
 
     def dict_repr(self):
