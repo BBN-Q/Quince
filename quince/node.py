@@ -232,6 +232,5 @@ class RemoveBox(QGraphicsRectItem):
         self.close_started = True
 
     def mouseReleaseEvent(self, event):
-        # if event.pos()
         self.parent.disconnect()
         self.scene().removeItem(self.parent)

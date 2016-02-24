@@ -22,8 +22,9 @@ from .util import *
 
 class NodeScene(QGraphicsScene):
     """docstring for NodeScene"""
-    def __init__(self):
+    def __init__(self, window=None):
         super(NodeScene, self).__init__()
+        self.window = window
         self.backdrop = QGraphicsRectItem()
         self.backdrop.setRect(-10000,-10000,20000,20000)
         self.backdrop.setZValue(-100)
@@ -202,6 +203,33 @@ class NodeScene(QGraphicsScene):
             print("Could not create a node of the requested type.")
             return None
 
+    def update_inspector_lists(self):
+        sweeps = sorted([i.label.toPlainText() for i in self.items() if isinstance(i, Node) and i.name == 'Sweep'])
+        params = sorted([i.label.toPlainText() for i in self.items() if isinstance(i, Node) and i.name == 'Parameter'])
+        
+        self.window.model_sweeps.clear()
+        self.window.model_params.clear()
+        for p in params:
+            i = QStandardItem(p)
+            i.setCheckable(True)
+            self.window.model_params.appendRow(i)
+        for s in sweeps:
+            i = QStandardItem(s)
+            i.setCheckable(True)
+            self.window.model_sweeps.appendRow(i)
+
+        self.window.list_view_sweeps.setModel(self.window.model_sweeps)
+        self.window.list_view_params.setModel(self.window.model_params)
+
+    def removeItem(self, item):
+        super(NodeScene, self).removeItem(item)
+        self.update_inspector_lists()
+
+    def addItem(self, item):
+        super(NodeScene, self).addItem(item)
+        if isinstance(item, Node):
+            self.update_inspector_lists()
+
 class NodeView(QGraphicsView):
     """docstring for NodeView"""
     def __init__(self, scene):
@@ -247,10 +275,10 @@ class NodeWindow(QMainWindow):
     def __init__(self, parent=None):
         super(NodeWindow, self).__init__(parent=parent)
         self.setWindowTitle("Nodes")
-        self.setGeometry(50,50,800,600)
+        self.setGeometry(50,50,1300,600)
         
         # Setup graphics
-        self.scene = NodeScene()
+        self.scene = NodeScene(window=self)
         self.view  = NodeView(self.scene)
 
         # Setup menu
@@ -300,6 +328,31 @@ class NodeWindow(QMainWindow):
         self.hbox = QHBoxLayout()
         self.hbox.addWidget(self.view)
         self.hbox.setContentsMargins(0,0,0,0)
+
+        # Setup inspector
+        self.tab_widget = QTabWidget(self)
+        self.tab_params = QWidget()
+        self.tab_sweeps = QWidget()
+        self.tab_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.tab_widget.addTab(self.tab_sweeps, "Sweeps")
+        self.tab_widget.addTab(self.tab_params, "Parameters")
+        self.hbox.addWidget(self.tab_widget)
+
+        # Create list views
+        self.list_view_params = QListView(self.tab_widget)
+        self.list_view_sweeps = QListView(self.tab_widget)
+        # self.list_view_sweeps.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.list_view_params.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.list_view_params)
+        self.tab_params.setLayout(vbox)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.list_view_sweeps)
+        self.tab_sweeps.setLayout(vbox)
+
+        # Setup models
+        self.model_params = QStandardItemModel(self.list_view_params)
+        self.model_sweeps = QStandardItemModel(self.list_view_sweeps)
 
         self.main_widget = QWidget()
         self.main_widget.setLayout(self.hbox)
