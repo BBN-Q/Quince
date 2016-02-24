@@ -359,6 +359,8 @@ class NodeWindow(QMainWindow):
 
     def duplicate(self):
         selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
+        old_to_new = {}
+        
         for sn in selected_nodes:
             node_names = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node)]
 
@@ -366,11 +368,44 @@ class NodeWindow(QMainWindow):
             nan = next_available_name(node_names, strip_numbers(sn.label.toPlainText()))
             new_node.label.setPlainText(nan)
 
+            # Set parameters from old
             new_node.update_parameters_from(sn)
 
+            # Update the mapping
+            old_to_new[sn] = new_node
+
+            # Stagger and update the selection to include the new nodes
             new_node.setPos(sn.pos()+QPointF(20,20))
             sn.setSelected(False)
             new_node.setSelected(True)
+
+        # Rewire the new nodes according to the old nodes
+        for sn in selected_nodes:
+            new_node = old_to_new[sn]
+
+            for k, v in sn.outputs.items():
+                for w in v.wires_out:
+                    # Create the wire and set the start
+                    new_wire = Wire(new_node.outputs[w.start_obj.name])
+                    
+                    new_wire.set_start(new_node.outputs[w.start_obj.name].scenePos())
+                    new_node.outputs[w.start_obj.name].wires_out.append(new_wire)
+
+                    # set the end of the wire
+                    if w.end_obj.parent in old_to_new:
+                        end_conn_name = w.end_obj.name
+                        end_node = old_to_new[w.end_obj.parent]
+                        if end_conn_name in end_node.inputs.keys():
+                            new_wire.end_obj = end_node.inputs[end_conn_name]
+                            new_wire.set_end(end_node.inputs[end_conn_name].scenePos())
+                            end_node.inputs[end_conn_name].wires_in.append(new_wire)
+                        elif end_conn_name in end_node.parameters.keys():
+                            new_wire.end_obj = end_node.parameters[end_conn_name]
+                            new_wire.set_end(end_node.parameters[end_conn_name].scenePos())
+                            end_node.parameters[end_conn_name].wires_in.append(new_wire)
+
+                        self.scene.addItem(new_wire)
+
 
     def cleanup(self):
         # Have to manually close proxy widgets
