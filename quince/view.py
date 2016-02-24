@@ -216,6 +216,16 @@ class NodeView(QGraphicsView):
         self.scale(1+change, 1+change)
         self.current_scale *= 1+change
 
+    def keyPressEvent(self, event):
+        if (event.key() == Qt.Key_Delete) and (event.modifiers() == Qt.ControlModifier):
+            selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
+            for sn in selected_nodes:
+                sn.disconnect()
+                self.scene.removeItem(sn)
+            self.scene.clear_wires(only_clear_orphaned=True)
+        else:
+            return super(NodeView, self).keyPressEvent(event)
+
     def mousePressEvent(self, event):
         if (event.button() == Qt.MidButton) or (event.button() == Qt.LeftButton and event.modifiers() == Qt.ShiftModifier):
             self.setDragMode(QGraphicsView.ScrollHandDrag)
@@ -347,11 +357,11 @@ class NodeWindow(QMainWindow):
         selected_nodes = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
         wires = [i for i in self.scene.items() if isinstance(i, Wire)]
         nodes_by_label = {i.label.toPlainText(): i for i in self.scene.items() if isinstance(i, Node)}
-        graph = qg.generate_graph(wires)
+        graph = generate_graph(wires)
 
         items = []
         for sn in selected_nodes:
-            sub_graph_items = qg.items_on_subgraph(graph, sn)
+            sub_graph_items = items_on_subgraph(graph, sn)
             items.extend(sub_graph_items)
 
         for i in items:
