@@ -395,26 +395,27 @@ class NodeWindow(QMainWindow):
 
             for k, v in sn.outputs.items():
                 for w in v.wires_out:
-                    # Create the wire and set the start
-                    new_wire = Wire(new_node.outputs[w.start_obj.name])
-                    
-                    new_wire.set_start(new_node.outputs[w.start_obj.name].scenePos())
-                    new_node.outputs[w.start_obj.name].wires_out.append(new_wire)
+                    # See if the user wants to copy nodes on both ends, otherwise don't make a wire
+                    if w.start_obj.parent in old_to_new:
+                        if w.end_obj.parent in old_to_new:
 
-                    # set the end of the wire
-                    if w.end_obj.parent in old_to_new:
-                        end_conn_name = w.end_obj.name
-                        end_node = old_to_new[w.end_obj.parent]
-                        if end_conn_name in end_node.inputs.keys():
-                            new_wire.end_obj = end_node.inputs[end_conn_name]
-                            new_wire.set_end(end_node.inputs[end_conn_name].scenePos())
-                            end_node.inputs[end_conn_name].wires_in.append(new_wire)
-                        elif end_conn_name in end_node.parameters.keys():
-                            new_wire.end_obj = end_node.parameters[end_conn_name]
-                            new_wire.set_end(end_node.parameters[end_conn_name].scenePos())
-                            end_node.parameters[end_conn_name].wires_in.append(new_wire)
+                            # Create the wire and set the start
+                            new_wire = Wire(new_node.outputs[w.start_obj.name])
+                            new_wire.set_start(new_node.outputs[w.start_obj.name].scenePos())
+                            new_node.outputs[w.start_obj.name].wires_out.append(new_wire)
 
-                        self.scene.addItem(new_wire)
+                            end_conn_name = w.end_obj.name
+                            end_node = old_to_new[w.end_obj.parent]
+                            if end_conn_name in end_node.inputs.keys():
+                                new_wire.end_obj = end_node.inputs[end_conn_name]
+                                new_wire.set_end(end_node.inputs[end_conn_name].scenePos())
+                                end_node.inputs[end_conn_name].wires_in.append(new_wire)
+                            elif end_conn_name in end_node.parameters.keys():
+                                new_wire.end_obj = end_node.parameters[end_conn_name]
+                                new_wire.set_end(end_node.parameters[end_conn_name].scenePos())
+                                end_node.parameters[end_conn_name].wires_in.append(new_wire)
+
+                            self.scene.addItem(new_wire)
 
 
     def cleanup(self):

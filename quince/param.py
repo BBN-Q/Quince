@@ -12,6 +12,7 @@ class Parameter(QGraphicsEllipseItem):
     """docstring for Parameter"""
     def __init__(self, name, parent=None):
         self.name = name
+        self.parent = parent
         rad = 5
         super(Parameter, self).__init__(-rad, -rad, 2*rad, 2*rad, parent=parent)
         
