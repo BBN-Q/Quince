@@ -98,6 +98,12 @@ class Node(QGraphicsRectItem):
         self.parameters[param.name] = param
         self.itemResize(QPointF(0.0,0.0))
 
+    def update_parameters_from(self, other_node):
+        # Make sure they are of the same type
+        if other_node.name == self.name:
+            for k, v in other_node.parameters.items():
+                self.parameters[k].set_value(v.value())
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
             for k, v in self.outputs.items():

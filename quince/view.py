@@ -18,6 +18,7 @@ from .node import *
 from .wire import *
 from .param import *
 from .graph import *
+from .util import *
 
 class NodeScene(QGraphicsScene):
     """docstring for NodeScene"""
@@ -90,6 +91,10 @@ class NodeScene(QGraphicsScene):
                         node.set_title_color(QColor(80,100,70))
                     elif cat_name == "Outputs":
                         node.set_title_color(QColor(120,70,70))
+                    # See if names will be duplicated
+                    node_names = [i.label.toPlainText() for i in self.items() if isinstance(i, Node)]
+                    nan = next_available_name(node_names, the_data['name'])
+                    node.label.setPlainText(nan)
 
                     node.setPos(self.backdrop.mapFromParent(self.last_click))
                     node.setPos(self.last_click)
@@ -188,6 +193,14 @@ class NodeScene(QGraphicsScene):
             data['wires'] = [n.dict_repr() for n in wires]
             json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
+    def create_node_by_name(self, name):
+        create_node_func_name = "create_"+("".join(name.split()))
+        if hasattr(self, create_node_func_name):
+            new_node = getattr(self, create_node_func_name)()
+            return new_node
+        else:
+            print("Could not create a node of the requested type.")
+            return None
 
 class NodeView(QGraphicsView):
     """docstring for NodeView"""
@@ -233,17 +246,17 @@ class NodeWindow(QMainWindow):
         # Setup menu
         self.statusBar()
 
-        exitAction = QAction(QIcon('exit.png'), '&Exit', self)        
+        exitAction = QAction('&Exit', self)        
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(QApplication.instance().quit)
 
-        saveAction = QAction(QIcon('save.png'), '&Save', self)        
+        saveAction = QAction('&Save', self)        
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.save)
 
-        openAction = QAction(QIcon('open.png'), '&Open', self)        
+        openAction = QAction('&Open', self)        
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open')
         openAction.triggered.connect(self.load)
@@ -258,6 +271,11 @@ class NodeWindow(QMainWindow):
         selectAllConnectedAction.setStatusTip('Select All Connected')
         selectAllConnectedAction.triggered.connect(self.select_all_connected)
 
+        duplicateAction = QAction('&Duplicate', self)        
+        duplicateAction.setShortcut('Ctrl+D')
+        duplicateAction.setStatusTip('Duplicate')
+        duplicateAction.triggered.connect(self.duplicate)
+
         fileMenu = self.menuBar().addMenu('&File')
         editMenu = self.menuBar().addMenu('&Edit')
         helpMenu = self.menuBar().addMenu('&Help')
@@ -266,6 +284,7 @@ class NodeWindow(QMainWindow):
         fileMenu.addAction(openAction)
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
+        editMenu.addAction(duplicateAction)
 
         # Setup layout
         self.hbox = QHBoxLayout()
@@ -337,6 +356,21 @@ class NodeWindow(QMainWindow):
 
         for i in items:
             nodes_by_label[i].setSelected(True)
+
+    def duplicate(self):
+        selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
+        for sn in selected_nodes:
+            node_names = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node)]
+
+            new_node = self.scene.create_node_by_name(sn.name)
+            nan = next_available_name(node_names, strip_numbers(sn.label.toPlainText()))
+            new_node.label.setPlainText(nan)
+
+            new_node.update_parameters_from(sn)
+
+            new_node.setPos(sn.pos())
+            sn.setSelected(False)
+            new_node.setSelected(True)
 
     def cleanup(self):
         # Have to manually close proxy widgets
