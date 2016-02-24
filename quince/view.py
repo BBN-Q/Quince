@@ -368,7 +368,7 @@ class NodeWindow(QMainWindow):
 
             new_node.update_parameters_from(sn)
 
-            new_node.setPos(sn.pos())
+            new_node.setPos(sn.pos()+QPointF(20,20))
             sn.setSelected(False)
             new_node.setSelected(True)
 
