@@ -7,7 +7,7 @@
 from PyQt5.QtGui import *
 import sys
 
-from quince_view import *
+from quince.view import *
 
 if __name__ == "__main__":
 
