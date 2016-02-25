@@ -47,6 +47,7 @@ class NumericalParameter(Parameter):
                  increment, snap, parent=None):
         super(NumericalParameter, self).__init__(name, parent=parent)
         # Slider Box
+        self.datatype = datatype
         self.value_box = SliderBox(
             datatype, min_value, max_value, increment, snap,
             parent=self)

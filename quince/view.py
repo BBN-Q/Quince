@@ -350,23 +350,27 @@ class NodeWindow(QMainWindow):
         self.tab_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.tab_widget.addTab(self.tab_sweeps, "Sweeps")
         self.tab_widget.addTab(self.tab_params, "Parameters")
-        self.hbox.addWidget(self.tab_widget)
+
+        self.inspector_vbox = QVBoxLayout()
+        self.hbox.addLayout(self.inspector_vbox)
+        self.inspector_vbox.addWidget(self.tab_widget)
 
         # Create list views
         self.sweep_view = NodeListView(self.tab_widget)
         self.param_view = NodeListView(self.tab_widget)
-        # self.list_view_sweeps.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.list_view_params.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # We need to update the sweep panel when the selection changes
+        self.sweep_view.selectionModel().currentChanged.connect(self.update_sweep_panel)
+
+        self.sweep_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.param_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         vbox = QVBoxLayout()
         vbox.addWidget(self.sweep_view)
         self.tab_sweeps.setLayout(vbox)
         vbox = QVBoxLayout()
         vbox.addWidget(self.param_view)
         self.tab_params.setLayout(vbox)
-
-        # Setup models
-        # self.model_params = QStandardItemModel(self.list_view_params)
-        # self.model_sweeps = QStandardItemModel(self.list_view_sweeps)
 
         self.main_widget = QWidget()
         self.main_widget.setLayout(self.hbox)
@@ -393,6 +397,21 @@ class NodeWindow(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.advance)
         self.timer.start(self.increment)
+
+    def update_sweep_panel(self, current, previous):
+        sweep_name = self.sweep_view.model.index(current.row(),0).data()
+        sweep_node = [i for i in self.scene.items() if isinstance(i, Node) and i.name == 'Sweep' and i.label.toPlainText() == sweep_name][0]
+
+        # Clear the old sweep form layout first
+        if self.inspector_vbox.count() > 1:
+            print("trying to delete")
+            print(self.inspector_vbox.itemAt(1))
+            destroy_me = self.inspector_vbox.itemAt(1)
+            self.inspector_vbox.removeItem(destroy_me)
+            clear_layout(destroy_me)
+
+        self.inspector_vbox.addLayout(SweepLayout(sweep_node))
+
 
     def set_status(self, text, time=2000):
         self.status_bar.showMessage(text, time)
