@@ -19,6 +19,7 @@ from .wire import *
 from .param import *
 from .graph import *
 from .util import *
+from .inspect import *
 
 class NodeScene(QGraphicsScene):
     """docstring for NodeScene"""
@@ -204,22 +205,35 @@ class NodeScene(QGraphicsScene):
             return None
 
     def update_inspector_lists(self):
-        sweeps = sorted([i.label.toPlainText() for i in self.items() if isinstance(i, Node) and i.name == 'Sweep'])
-        params = sorted([i.label.toPlainText() for i in self.items() if isinstance(i, Node) and i.name == 'Parameter'])
+        sweeps = [i for i in self.items() if isinstance(i, Node) and i.name == 'Sweep']
+        params = [i for i in self.items() if isinstance(i, Node) and i.name == 'Parameter']
         
-        self.window.model_sweeps.clear()
-        self.window.model_params.clear()
+        # Insert any new sweeps/params
         for p in params:
-            i = QStandardItem(p)
-            i.setCheckable(True)
-            self.window.model_params.appendRow(i)
+            matches = self.window.param_view.model.findItems(p.label.toPlainText())
+            if len(matches) == 0:
+                item = QStandardItem(p.label.toPlainText())
+                item.setCheckable(True)
+                item.setDropEnabled(False)
+                self.window.param_view.model.appendRow(item)
         for s in sweeps:
-            i = QStandardItem(s)
-            i.setCheckable(True)
-            self.window.model_sweeps.appendRow(i)
+            matches = self.window.sweep_view.model.findItems(s.label.toPlainText())
+            if len(matches) == 0:
+                item = QStandardItem(s.label.toPlainText())
+                item.setCheckable(True)
+                item.setDropEnabled(False)
+                self.window.sweep_view.model.appendRow(item)
 
-        self.window.list_view_sweeps.setModel(self.window.model_sweeps)
-        self.window.list_view_params.setModel(self.window.model_params)
+        # Remove any old sweeps/params
+        sweep_names = [s.label.toPlainText() for s in sweeps]
+        param_names = [p.label.toPlainText() for p in params]
+
+        for i in range(self.window.param_view.model.rowCount()):
+            if self.window.param_view.model.index(i,0).data() not in param_names:
+                self.window.param_view.model.removeRows(i,1)
+        for i in range(self.window.sweep_view.model.rowCount()):
+            if self.window.sweep_view.model.index(i,0).data() not in sweep_names:
+                self.window.sweep_view.model.removeRows(i,1)
 
     def removeItem(self, item):
         super(NodeScene, self).removeItem(item)
@@ -339,20 +353,20 @@ class NodeWindow(QMainWindow):
         self.hbox.addWidget(self.tab_widget)
 
         # Create list views
-        self.list_view_params = QListView(self.tab_widget)
-        self.list_view_sweeps = QListView(self.tab_widget)
+        self.sweep_view = NodeListView(self.tab_widget)
+        self.param_view = NodeListView(self.tab_widget)
         # self.list_view_sweeps.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.list_view_params.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         vbox = QVBoxLayout()
-        vbox.addWidget(self.list_view_params)
-        self.tab_params.setLayout(vbox)
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.list_view_sweeps)
+        vbox.addWidget(self.sweep_view)
         self.tab_sweeps.setLayout(vbox)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.param_view)
+        self.tab_params.setLayout(vbox)
 
         # Setup models
-        self.model_params = QStandardItemModel(self.list_view_params)
-        self.model_sweeps = QStandardItemModel(self.list_view_sweeps)
+        # self.model_params = QStandardItemModel(self.list_view_params)
+        # self.model_sweeps = QStandardItemModel(self.list_view_sweeps)
 
         self.main_widget = QWidget()
         self.main_widget.setLayout(self.hbox)
