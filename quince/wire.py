@@ -47,16 +47,22 @@ class Wire(QGraphicsPathItem):
         self.setVisible(False)
         drop_site = self.scene().itemAt(event.scenePos(), QTransform())
         if isinstance(drop_site, Connector):
-            if drop_site.connector_type == 'input':
+            if self.start_obj.parent.name in ["Sweep", "Parameter"]:
+                self.scene().window.set_status("Can't connect a sweep or parameter to a data connector.")
+            elif drop_site.connector_type == 'input':
                 self.set_end(drop_site.scenePos())
                 self.end_obj = drop_site
                 drop_site.wires_in.append(self)
                 self.start_obj.wires_out.append(self)
         elif isinstance(drop_site, Parameter):
-            self.set_end(drop_site.scenePos())
-            self.end_obj = drop_site
-            drop_site.wires_in.append(self)
-            self.start_obj.wires_out.append(self)
+            print(self.start_obj.name)
+            if self.start_obj.parent.name in ["Sweep", "Parameter"]:
+                drop_site.wires_in.append(self)
+                self.start_obj.wires_out.append(self)
+                self.set_end(drop_site.scenePos())
+                self.end_obj = drop_site
+            else:
+                self.scene().window.set_status("Can't connect data connector to parameter.")
 
         self.setVisible(True)
         self.scene().clear_wires(only_clear_orphaned=True)
