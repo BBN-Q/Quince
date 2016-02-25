@@ -40,7 +40,6 @@ class Node(QGraphicsRectItem):
         self.label = TitleText(self.name, parent=self)
         
         self.label.setDefaultTextColor(Qt.white)
-        self.label.textChanged.connect(self.print_me)
 
         if self.label.boundingRect().topRight().x() > 80:
             self.min_width = self.label.boundingRect().topRight().x()+20
@@ -63,9 +62,6 @@ class Node(QGraphicsRectItem):
 
         # Make sure things are properly sized
         self.itemResize(QPointF(0.0,0.0))
-
-    def print_me(self, val):
-        print(val)
 
     def set_title_color(self, color):
         self.title_color = color
@@ -214,9 +210,10 @@ class TitleText(QGraphicsTextItem):
             nodes.remove(self.parent)
             node_names = [n.label.toPlainText() for n in nodes]
             if text in node_names:
-                print("Node name already exists")
+                self.scene().window.set_status("Node name already exists")
             else:
                 self._value = text
+                self.scene().update_inspector_lists()
             self.textChanged.emit(self.toPlainText())
         else:
             self._value = text

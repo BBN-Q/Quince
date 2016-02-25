@@ -115,7 +115,7 @@ class SliderBox(QGraphicsRectItem):
                 val = float(str(text))
             return val
         except:
-            print("Got unreasonable input...")
+            self.scene().window.set_status("Got unreasonable input...")
             return self._value
 
     def textFromValue(self, value):

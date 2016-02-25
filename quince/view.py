@@ -147,9 +147,9 @@ class NodeScene(QGraphicsScene):
                         new_node.label.setPlainText(n['label'])
                         new_nodes[n['label']] = new_node
                     else:
-                        print("Node cannot be named {}, label already in use".format(n['label']))
+                        self.window.set_status("Node cannot be named {}, label already in use".format(n['label']))
                 else:
-                    print("Could not load node of type {}, please check nodes directory.".format(n['name']))
+                    self.window.set_status("Could not load node of type {}, please check nodes directory.".format(n['name']))
 
             for w in wires:
                 # Instantiate a little later
@@ -180,9 +180,9 @@ class NodeScene(QGraphicsScene):
                         new_wire.set_end(end_node.parameters[end_conn_name].scenePos())
                         end_node.parameters[end_conn_name].wires_in.append(new_wire)
                     else:
-                        print("Could not find input {} on node {}.".format(end_conn_name, end_node_name))
+                        self.window.set_status("Could not find input {} on node {}.".format(end_conn_name, end_node_name))
                 else:
-                    print("Could not find output {} on node {}.".format(start_conn_name, start_node_name))
+                    self.window.set_status("Could not find output {} on node {}.".format(start_conn_name, start_node_name))
 
     def save(self, filename):
         with open(filename, 'w') as df:
@@ -200,7 +200,7 @@ class NodeScene(QGraphicsScene):
             new_node = getattr(self, create_node_func_name)()
             return new_node
         else:
-            print("Could not create a node of the requested type.")
+            self.window.set_status("Could not create a node of the requested type.")
             return None
 
     def update_inspector_lists(self):
@@ -282,7 +282,7 @@ class NodeWindow(QMainWindow):
         self.view  = NodeView(self.scene)
 
         # Setup menu
-        self.statusBar()
+        self.status_bar = self.statusBar()
 
         exitAction = QAction('&Exit', self)        
         exitAction.setShortcut('Ctrl+Q')
@@ -379,6 +379,9 @@ class NodeWindow(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.advance)
         self.timer.start(self.increment)
+
+    def set_status(self, text, time=2000):
+        self.status_bar.showMessage(text, time)
 
     def advance(self):
         if self.draw_i < self.duration:

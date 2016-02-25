@@ -32,7 +32,6 @@ class Wire(QGraphicsPathItem):
         self.end_image = QGraphicsEllipseItem(-rad, -rad, 2*rad, 2*rad, parent=self)
         self.end_image.setBrush(Qt.white)
         self.end_image.setPos(self.start)
-        # self.end_image.setZValue(10)
 
         # Setup behavior for unlinking the end of the wire, monkeypatch!
         self.end_image.mousePressEvent = lambda e: self.unhook(e)
@@ -40,7 +39,6 @@ class Wire(QGraphicsPathItem):
         self.end_image.mouseReleaseEvent = lambda e: self.decide_drop(e)
 
     def unhook(self, event):
-        print("Unhooking")
         self.end_obj.wires_in.remove(self)
         self.start_obj.wires_out.remove(self)
         self.end_obj = None
@@ -50,21 +48,15 @@ class Wire(QGraphicsPathItem):
         drop_site = self.scene().itemAt(event.scenePos(), QTransform())
         if isinstance(drop_site, Connector):
             if drop_site.connector_type == 'input':
-                print("Connecting to data-flow connector")
                 self.set_end(drop_site.scenePos())
                 self.end_obj = drop_site
                 drop_site.wires_in.append(self)
                 self.start_obj.wires_out.append(self)
-            else:
-                print("Can't connect to output")
         elif isinstance(drop_site, Parameter):
-            print("Connecting to parameter connector")
             self.set_end(drop_site.scenePos())
             self.end_obj = drop_site
             drop_site.wires_in.append(self)
             self.start_obj.wires_out.append(self)
-        else:
-            print("Bad drop!")
 
         self.setVisible(True)
         self.scene().clear_wires(only_clear_orphaned=True)
