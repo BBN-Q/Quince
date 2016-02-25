@@ -37,9 +37,10 @@ class Node(QGraphicsRectItem):
         self.title_color_selected = QColor(110,110,80)
         self.title_bar.setBrush(QBrush(self.title_color))
         self.title_bar.setPen(QPen(QColor(200,200,200), 0.75))
-        self.label = QGraphicsTextItem(self.name, parent=self)
-        self.label.setTextInteractionFlags(Qt.TextEditorInteraction)
+        self.label = TitleText(self.name, parent=self)
+        
         self.label.setDefaultTextColor(Qt.white)
+        self.label.textChanged.connect(self.print_me)
 
         if self.label.boundingRect().topRight().x() > 80:
             self.min_width = self.label.boundingRect().topRight().x()+20
@@ -62,6 +63,9 @@ class Node(QGraphicsRectItem):
 
         # Make sure things are properly sized
         self.itemResize(QPointF(0.0,0.0))
+
+    def print_me(self, val):
+        print(val)
 
     def set_title_color(self, color):
         self.title_color = color
@@ -193,6 +197,44 @@ class Node(QGraphicsRectItem):
         dat['params'] = params
         dat['pos'] = [self.scenePos().x(), self.scenePos().y()]
         return dat
+
+class TitleText(QGraphicsTextItem):
+    '''QGraphicsTextItem with textChanged() signal.'''
+    textChanged = pyqtSignal(str)
+
+    def __init__(self, text, parent=None):
+        super(TitleText, self).__init__(text, parent)
+        self.setTextInteractionFlags(Qt.TextEditorInteraction)
+        self._value = text
+        self.parent = parent
+
+    def setPlainText(self, text):
+        if hasattr(self.scene(), 'items'):
+            nodes = [i for i in self.scene().items() if isinstance(i, Node)]
+            nodes.remove(self.parent)
+            node_names = [n.label.toPlainText() for n in nodes]
+            if text in node_names:
+                print("Node name already exists")
+            else:
+                self._value = text
+            self.textChanged.emit(self.toPlainText())
+        else:
+            self._value = text
+        
+        super(TitleText, self).setPlainText(self._value)
+
+    def focusOutEvent (self, event):
+        self.setPlainText(self.toPlainText())
+        super(TitleText, self).focusOutEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            c = self.textCursor()
+            c.clearSelection()
+            self.setTextCursor(c)
+            self.clearFocus()
+        else:
+            return super(TitleText, self).keyPressEvent(event)
 
 class ResizeHandle(QGraphicsRectItem):
     """docstring for ResizeHandle"""
