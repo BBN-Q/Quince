@@ -204,6 +204,13 @@ class NodeScene(QGraphicsScene):
             self.window.set_status("Could not create a node of the requested type.")
             return None
 
+    def inspector_change_name(self, before, after):
+        matches = self.window.sweep_view.model.findItems(before)
+        if len(matches) != 1:
+            print("There should be only one sweep matching the name '{}', but a different number were found".format(before))
+        else:
+            matches[0].setText(after)
+
     def update_inspector_lists(self):
         sweeps = [i for i in self.items() if isinstance(i, Node) and i.name == 'Sweep']
         params = [i for i in self.items() if isinstance(i, Node) and i.name == 'Parameter']
@@ -215,6 +222,7 @@ class NodeScene(QGraphicsScene):
                 item = QStandardItem(p.label.toPlainText())
                 item.setCheckable(True)
                 item.setDropEnabled(False)
+                item.setEditable(False)
                 self.window.param_view.model.appendRow(item)
         for s in sweeps:
             matches = self.window.sweep_view.model.findItems(s.label.toPlainText())
@@ -222,6 +230,7 @@ class NodeScene(QGraphicsScene):
                 item = QStandardItem(s.label.toPlainText())
                 item.setCheckable(True)
                 item.setDropEnabled(False)
+                item.setEditable(False)
                 self.window.sweep_view.model.appendRow(item)
 
         # Remove any old sweeps/params
