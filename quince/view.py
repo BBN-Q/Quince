@@ -87,7 +87,20 @@ class NodeScene(QGraphicsScene):
                             pp = NumericalParameter(p['name'], int, p['low'], p['high'], p['increment'], p['snap'])
                         elif p['type'] == 'combo':
                             pp = StringParameter(p['name'])
+
+                        if 'default' in p.keys():
+                            pp.set_value(p['default'])
+
+                        # Special parameters have no input connectors
+                        if 'has_input' in p.keys():
+                            pp.has_input = p['has_input']
+
+                        # Special parameters cannot be directly edited
+                        if 'interactive' in p.keys():
+                            pp.set_interactive(p['interactive'])
+
                         node.add_parameter(pp)
+
                     # Custom coloring
                     if cat_name == "Inputs":
                         node.set_title_color(QColor(80,100,70))

@@ -63,6 +63,26 @@ class Node(QGraphicsRectItem):
         # Make sure things are properly sized
         self.itemResize(QPointF(0.0,0.0))
 
+        # Synchronizing parameters
+        self.changing = False
+   
+    def value_changed(self, name):
+        # Update the sweep parameters accordingly
+        if self.name == "Sweep":
+            stop  = self.parameters['Stop'].value()
+            start = self.parameters['Start'].value()
+            incr  = self.parameters['Incr.'].value()
+            steps = self.parameters['Steps'].value()
+            if name == "Incr.":
+                if incr != 0.0:
+                    steps = int(float(stop-start)/float(incr))
+                    self.parameters['Steps'].set_value(steps if steps>0 else 1)
+            elif name == "Steps":
+                self.parameters['Incr.'].set_value((stop-start)/steps)
+            else:
+                self.parameters['Incr.'].set_value((stop-start)/steps)
+        self.changing = False
+
     def set_title_color(self, color):
         self.title_color = color
         self.title_bar.setBrush(QBrush(color))
@@ -214,7 +234,6 @@ class TitleText(QGraphicsTextItem):
             else:
                 self.scene().inspector_change_name(self._value, text)
                 self._value = text
-                # self.scene().update_inspector_lists()
             self.textChanged.emit(self.toPlainText())
         else:
             self._value = text

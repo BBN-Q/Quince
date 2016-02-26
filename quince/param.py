@@ -15,6 +15,9 @@ class Parameter(QGraphicsEllipseItem):
         self.parent = parent
         rad = 5
         super(Parameter, self).__init__(-rad, -rad, 2*rad, 2*rad, parent=parent)
+
+        self.has_input   = True # Do we draw the connector?
+        self.interactive = True # Can we modify the value?
         
         self.setBrush(QBrush(QColor(200,200,240)))
         self.setPen(Qt.black)
@@ -32,6 +35,17 @@ class Parameter(QGraphicsEllipseItem):
         # Value Box
         self.value_box = None
 
+    def set_changed_flag(self):
+        # Would prefer to use signals/slots, but that's apparently too heavy for QGraphics
+        # Instead we add the name of the changed parameter to the list
+        if self.parent is not None and not self.parent.changing:
+            self.parent.changing = True
+            self.parent.value_changed( self.name )
+
+    def set_interactive(self, value):
+        self.interactive = value
+        self.value_box.interactive = value
+
     def set_box_width(self, width):
         self.value_box.set_box_width(width)
 
@@ -40,6 +54,11 @@ class Parameter(QGraphicsEllipseItem):
 
     def set_value(self, value):
         self.value_box.set_value(float(value))
+        self.set_changed_flag()
+
+    def paint(self, painter, options, widget):
+        if self.has_input:
+            super(Parameter, self).paint(painter, options, widget)
 
 class NumericalParameter(Parameter):
     """docstring for Parameter"""
@@ -47,9 +66,14 @@ class NumericalParameter(Parameter):
                  increment, snap, parent=None):
         super(NumericalParameter, self).__init__(name, parent=parent)
         # Slider Box
+        self.datatype = datatype
         self.value_box = SliderBox(
             datatype, min_value, max_value, increment, snap,
             parent=self)
+        
+    def set_value(self, value):
+        self.value_box.set_value(self.datatype(value))
+        self.set_changed_flag()
 
 class StringParameter(Parameter):
     """docstring for Parameter"""
@@ -57,7 +81,7 @@ class StringParameter(Parameter):
         super(StringParameter, self).__init__(name, parent=parent)
         # SliderBox
         self.value_box = StringBox(parent=self)
-
+        
     def set_value(self, value):
         self.value_box.set_value(value)
 
@@ -67,14 +91,17 @@ class FilenameParameter(StringParameter):
         super(FilenameParameter, self).__init__(name, parent=parent)
         # SliderBox
         self.value_box = FilenameBox(parent=self)
-
+        
 class SliderBox(QGraphicsRectItem):
     """docstring for SliderBox"""
+
     def __init__(self, datatype, min_value, max_value, increment, snap, parent=None):
         super(SliderBox, self).__init__(parent=parent)
         self.parent = parent
         self.dragging = False
         self.value_changed = False
+
+        self.interactive = True
 
         self.datatype  = datatype
         self.min_value = min_value
@@ -125,15 +152,20 @@ class SliderBox(QGraphicsRectItem):
             return ("{:.4g}".format(value))
 
     def set_value(self, val):
+        changed = False
         val = self.valueFromText(val)
         if val >= self.min_value and val <= self.max_value:
             if self.snap:
                 val = (val/self.snap)*self.snap
             self._value = self.datatype(val)
+            changed = True
             
         self.label.setPlainText(self.textFromValue(self._value))
         self.refresh_label()
         self.update()
+        print("New value of {} is: {}, text box value is {}".format(self.parent.name, self._value, self.label.toPlainText()))
+        if changed:
+            self.parent.set_changed_flag()
 
     def refresh_label(self):
         label_width = self.label.boundingRect().topRight().x()
@@ -150,24 +182,33 @@ class SliderBox(QGraphicsRectItem):
         self.label.setPos(3+0.5*self.rect().width()-0.5*label_width,15-5)
 
     def mousePressEvent(self, event):
-        self.dragging = True
-        self.original_value = self._value
-        self.drag_start = event.scenePos()
+        if self.interactive:
+            self.dragging = True
+            self.original_value = self._value
+            self.drag_start = event.scenePos()
+        else:
+            super(SliderBox, self).mouseMoveEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.dragging:
-            delta = event.scenePos() - self.drag_start
-            value_change = self.increment*int(delta.x()/10.0)
-            if value_change != 0.0:
-                self.value_changed = True
-            self.set_value(self.original_value + value_change)
+        if self.interactive:
+            if self.dragging:
+                delta = event.scenePos() - self.drag_start
+                value_change = self.increment*int(delta.x()/10.0)
+                if value_change != 0.0:
+                    self.value_changed = True
+                self.set_value(self.original_value + value_change)
+        else:
+            super(SliderBox, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        self.dragging = False
-        if not self.value_changed:
-            self.label.setPos(3+5,15-5)
-            self.label.set_text_interaction(True)
-        self.value_changed = False
+        if self.interactive:
+            self.dragging = False
+            if not self.value_changed:
+                self.label.setPos(3+5,15-5)
+                self.label.set_text_interaction(True)
+            self.value_changed = False
+        else:
+            super(SliderBox, self).mouseMoveEvent(event)
 
 class StringBox(QGraphicsRectItem):
     """docstring for SliderBox"""
@@ -199,6 +240,7 @@ class StringBox(QGraphicsRectItem):
         self.label.clip_text()
         self.refresh_label()
         self.update()
+        self.parent.set_changed_flag()
 
     def refresh_label(self):
         label_width = self.label.boundingRect().topRight().x()
