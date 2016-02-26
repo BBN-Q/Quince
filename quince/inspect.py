@@ -35,34 +35,20 @@ class SweepLayout(QFormLayout):
         self.sweep_node = sweep_node
 
         # Change inputs depending on datatype
-        input_type_map = {float: SciDoubleSpinBox, int: SciSpinBox}
+        input_type_map = {float: QDoubleSpinBox, int: QSpinBox}
 
         wires_out = self.sweep_node.outputs['Swept Param.'].wires_out
         if len(wires_out) == 0:
             datatype = int
-            self.connected_parameter = None
+            connected_parameter = None
         else:
-            self.connected_parameter = self.sweep_node.outputs['Swept Param.'].wires_out[0].end_obj
-            datatype = self.connected_parameter.datatype
+            connected_parameter = self.sweep_node.outputs['Swept Param.'].wires_out[0].end_obj
+            datatype = connected_parameter.datatype
 
         self.start     = input_type_map[datatype]()
         self.stop      = input_type_map[datatype]()
         self.increment = input_type_map[datatype]()
         self.steps     = QSpinBox()
-
-        if self.connected_parameter is not None:
-            self.start.setMinimum(self.connected_parameter.value_box.min_value)
-            self.start.setMaximum(self.connected_parameter.value_box.max_value)
-            self.start.setSingleStep(self.connected_parameter.value_box.increment)
-            self.stop.setMinimum(self.connected_parameter.value_box.min_value)
-            self.stop.setMaximum(self.connected_parameter.value_box.max_value)
-            self.stop.setSingleStep(self.connected_parameter.value_box.increment)
-            self.increment.setMinimum(-1e12)
-            self.increment.setMaximum(1e12)
-            self.increment.setSingleStep(self.connected_parameter.value_box.increment)
-        self.steps.setMinimum(1)
-        self.steps.setMaximum(1e9)
-        self.steps.setSingleStep(1)
 
         self.start.setValue(self.sweep_object.start)
         self.stop.setValue(self.sweep_object.stop)
@@ -106,76 +92,3 @@ class Sweep(object):
     def set_steps(self, value):
         self.steps = value
         
-class SciSpinBox(QDoubleSpinBox):
-    def __init__(self, parent=None):
-        super(SciSpinBox, self).__init__(parent)
-        self.setButtonSymbols(QAbstractSpinBox.NoButtons)
-        self.validator = QDoubleValidator(-1e12, 1e12, 10, self)
-        self.validator.setNotation(QDoubleValidator.ScientificNotation)
-
-        # This is the physical unit associated with this value
-        self.unit = ""
-
-    def validate(self, text, pos):
-        return self.validator.validate(text, pos)
-
-    def fixCase(self, text):
-        self.lineEdit().setText(text.toLower())
-
-    def valueFromText(self, text):
-        return int(str(text))
-
-    def textFromValue(self, value):
-        # return "%.*g" % (self.decimals(), value)
-        return "%g" % (value)
-
-    def stepEnabled(self):
-        return QAbstractSpinBox.StepNone
-
-    def __str__(self):
-        return "%g %s" % (self.value(), self.unit)
-
-    def setUnit(self, string):
-        self.unit = string
-        self.setProperty("unit", string)
-
-    def getUnit(self):
-        self.unit = self.property("unit").toString()
-        return self.unit
-
-class SciDoubleSpinBox(QDoubleSpinBox):
-    def __init__(self, parent=None):
-        super(SciDoubleSpinBox, self).__init__(parent)
-        self.setButtonSymbols(QAbstractSpinBox.NoButtons)
-        self.validator = QDoubleValidator(-1.0e12, 1.0e12, 10, self)
-        self.validator.setNotation(QDoubleValidator.ScientificNotation)
-
-        # This is the physical unit associated with this value
-        self.unit = ""
-
-    def validate(self, text, pos):
-        return self.validator.validate(text, pos)
-
-    def fixCase(self, text):
-        self.lineEdit().setText(text.toLower())
-
-    def valueFromText(self, text):
-        return float(str(text))
-
-    def textFromValue(self, value):
-        # return "%.*g" % (self.decimals(), value)
-        return "%.4g" % (value)
-
-    def stepEnabled(self):
-        return QAbstractSpinBox.StepNone
-
-    def __str__(self):
-        return "%.4g %s" % (self.value(), self.unit)
-
-    def setUnit(self, string):
-        self.unit = string
-        self.setProperty("unit", string)
-
-    def getUnit(self):
-        self.unit = self.property("unit").toString()
-        return self.unit

@@ -284,7 +284,7 @@ class NodeWindow(QMainWindow):
     """docstring for NodeWindow"""
     def __init__(self, parent=None):
         super(NodeWindow, self).__init__(parent=parent)
-        self.setWindowTitle("Quince")
+        self.setWindowTitle("Nodes")
         self.setGeometry(50,50,1300,600)
         
         # Setup graphics
@@ -401,15 +401,15 @@ class NodeWindow(QMainWindow):
             self.inspector_vbox.removeItem(destroy_me)
             clear_layout(destroy_me)
 
-        # try:
-        if self.sweep_view.model.rowCount() > 0:
-            sweep_name = self.sweep_view.model.index(current.row(),0).data()
-            sweep_object = self.sweep_view.model.item(current.row()).sweep_object
-            sweep_node = [i for i in self.scene.items() if isinstance(i, Node) and i.name == 'Sweep' and i.label.toPlainText() == sweep_name][0]
+        try:
+            if self.sweep_view.model.rowCount() > 0:
+                sweep_name = self.sweep_view.model.index(current.row(),0).data()
+                sweep_object = self.sweep_view.model.item(current.row()).sweep_object
+                sweep_node = [i for i in self.scene.items() if isinstance(i, Node) and i.name == 'Sweep' and i.label.toPlainText() == sweep_name][0]
 
-            self.inspector_vbox.addLayout(SweepLayout(sweep_node, sweep_object))
-        # except:
-            # print("Fix me: error with empty sweep list.")
+                self.inspector_vbox.addLayout(SweepLayout(sweep_node, sweep_object))
+        except:
+            print("Fix me: error with empty sweep list.")
 
     def set_status(self, text, time=2000):
         self.status_bar.showMessage(text, time)
