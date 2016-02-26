@@ -86,7 +86,7 @@ class NodeScene(QGraphicsScene):
                         elif p['type'] == 'int':
                             pp = NumericalParameter(p['name'], int, p['low'], p['high'], p['increment'], p['snap'])
                         elif p['type'] == 'combo':
-                            pp = StringParameter(p['name'])
+                            pp = ComboParameter(p['name'], p['choices'])
 
                         if 'default' in p.keys():
                             pp.set_value(p['default'])

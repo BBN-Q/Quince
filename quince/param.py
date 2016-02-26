@@ -8,6 +8,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+import os
+
 class Parameter(QGraphicsEllipseItem):
     """docstring for Parameter"""
     def __init__(self, name, parent=None):
@@ -79,11 +81,16 @@ class StringParameter(Parameter):
     """docstring for Parameter"""
     def __init__(self, name, parent=None):
         super(StringParameter, self).__init__(name, parent=parent)
-        # SliderBox
         self.value_box = StringBox(parent=self)
         
     def set_value(self, value):
         self.value_box.set_value(value)
+
+class ComboParameter(StringParameter):
+    """docstring for Parameter"""
+    def __init__(self, name, values, parent=None):
+        super(ComboParameter, self).__init__(name, parent=parent)
+        self.value_box = ComboBox(values, parent=self)
 
 class FilenameParameter(StringParameter):
     """docstring for Parameter"""
@@ -287,6 +294,30 @@ class FilenameBox(StringBox):
         self.browse_button.setRect(self.rect().width()-28, -3, 30, 12)
         self.update()
 
+class ComboBox(StringBox):
+    """docstring for ComboBox"""
+    def __init__(self, values, parent=None):
+        super(ComboBox, self).__init__(parent=parent)
+        self.menu = QMenu(self.scene())
+        self.values = values
+
+    def menu_changed(self, action):
+        self.set_value(action.data())
+
+    def mousePressEvent(self, event):
+        self.clicked = True
+
+    def mouseReleaseEvent(self, event):
+        if self.clicked:
+            menu = QMenu()
+            for v in self.values:
+                act = QAction(v, self.scene())
+                act.setData(v)
+                menu.addAction(act)
+            menu.triggered.connect(self.menu_changed)
+            menu.exec_(event.screenPos())
+        self.clicked = False
+        
 
 class ValueBoxText(QGraphicsTextItem):
     """docstring for ValueBoxText"""
