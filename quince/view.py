@@ -212,12 +212,16 @@ class NodeScene(QGraphicsScene):
         for p in params:
             matches = self.window.param_view.model.findItems(p.label.toPlainText())
             if len(matches) == 0:
-                item = SweepItem(p.label.toPlainText(), Sweep())
+                item = QStandardItem(p.label.toPlainText())
+                item.setCheckable(True)
+                item.setDropEnabled(False)
                 self.window.param_view.model.appendRow(item)
         for s in sweeps:
             matches = self.window.sweep_view.model.findItems(s.label.toPlainText())
             if len(matches) == 0:
-                item = SweepItem(s.label.toPlainText(), Sweep())
+                item = QStandardItem(s.label.toPlainText())
+                item.setCheckable(True)
+                item.setDropEnabled(False)
                 self.window.sweep_view.model.appendRow(item)
 
         # Remove any old sweeps/params
@@ -395,21 +399,19 @@ class NodeWindow(QMainWindow):
         self.timer.start(self.increment)
 
     def update_sweep_panel(self, current, previous):
+        sweep_name = self.sweep_view.model.index(current.row(),0).data()
+        sweep_node = [i for i in self.scene.items() if isinstance(i, Node) and i.name == 'Sweep' and i.label.toPlainText() == sweep_name][0]
+
         # Clear the old sweep form layout first
         if self.inspector_vbox.count() > 1:
+            print("trying to delete")
+            print(self.inspector_vbox.itemAt(1))
             destroy_me = self.inspector_vbox.itemAt(1)
             self.inspector_vbox.removeItem(destroy_me)
             clear_layout(destroy_me)
 
-        try:
-            if self.sweep_view.model.rowCount() > 0:
-                sweep_name = self.sweep_view.model.index(current.row(),0).data()
-                sweep_object = self.sweep_view.model.item(current.row()).sweep_object
-                sweep_node = [i for i in self.scene.items() if isinstance(i, Node) and i.name == 'Sweep' and i.label.toPlainText() == sweep_name][0]
+        self.inspector_vbox.addLayout(SweepLayout(sweep_node))
 
-                self.inspector_vbox.addLayout(SweepLayout(sweep_node, sweep_object))
-        except:
-            print("Fix me: error with empty sweep list.")
 
     def set_status(self, text, time=2000):
         self.status_bar.showMessage(text, time)

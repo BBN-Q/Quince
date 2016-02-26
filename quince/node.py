@@ -23,9 +23,6 @@ class Node(QGraphicsRectItem):
         self.inputs = {}
         self.parameters = {}
 
-        # A general purpose container for hidden values
-        self.other_values = {}
-
         self.bg_color = QColor(240,240,240)
         self.edge_color = QColor(200,200,200)
         self.edge_color_selected = QColor(247,217,17)
