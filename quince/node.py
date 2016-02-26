@@ -23,6 +23,9 @@ class Node(QGraphicsRectItem):
         self.inputs = {}
         self.parameters = {}
 
+        # self.parameter_locs = {}
+        # self.parameter_locs_collapsed = {}
+
         self.bg_color = QColor(240,240,240)
         self.edge_color = QColor(200,200,200)
         self.edge_color_selected = QColor(247,217,17)
@@ -244,6 +247,14 @@ class Node(QGraphicsRectItem):
         dat['params'] = params
         dat['pos'] = [self.scenePos().x(), self.scenePos().y()]
         return dat
+
+    def matlab_repr(self):
+        params = {}
+        for k, v in self.parameters.items():
+            params[k] = v.value()
+
+        params['deviceName'] = self.name
+        return params
 
 class TitleText(QGraphicsTextItem):
     '''QGraphicsTextItem with textChanged() signal.'''

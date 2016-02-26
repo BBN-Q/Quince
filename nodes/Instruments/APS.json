@@ -1,8 +1,11 @@
 {
-"name": "APS Slice",
+"name": "APS2",
 "outputs": ["Quadrature", "Marker1", "Marker2", "Marker3", "Marker4"],
 "inputs": ["uW LO"],
 "parameters": [
-	{"name": "Address", "type": "str", "tip": "not yet"}
+	{"name": "Address", "type": "str", "tip": "not yet", "default": "192.168.4.1"},
+	{"name": "Sample Rate", "type": "float", "increment": 100e6, "snap": true, "low":100e6, "high": 1.2e9, "tip": "Samp/sec", "default": 1.2e9},
+	{"name": "Sequence File", "type": "filename", "tip": "Save to this filename."},
+	{"name": "Trigger Source", "type": "combo", "choices": ["Internal", "External", "System"], "tip": "Save to this filename.", "default": "External"}
 	]
 }

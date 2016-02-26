@@ -228,6 +228,22 @@ class NodeScene(QGraphicsScene):
             data['sweeps'] = sweep_dict
             json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
+    def export(self, filename):
+        with open(filename, 'w') as df:
+            nodes  = [i for i in self.items() if isinstance(i, Node)]
+            # wires  = [i for i in self.items() if isinstance(i, Wire)]
+            
+            # rowCount = self.window.sweep_view.model.rowCount()
+            # sweeps = [self.window.sweep_view.model.item(i) for i in range(rowCount)]
+            # sweep_dict = [{'number': i, 'name': s.text(), 'enabled': s.checkState()} for i,s in enumerate(sweeps)]
+
+            data = {}
+            data['CWMode'] = False
+            data['instruments']  = {n.label.toPlainText(): n.matlab_repr() for n in nodes}
+            # data['wires']  = [n.dict_repr() for n in wires]
+            # data['sweeps'] = sweep_dict
+            json.dump(data, df, sort_keys=True, indent=2, separators=(',', ': '))
+
     def create_node_by_name(self, name):
         create_node_func_name = "create_"+("".join(name.split()))
         if hasattr(self, create_node_func_name):
@@ -350,6 +366,11 @@ class NodeWindow(QMainWindow):
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.save)
 
+        exportAction = QAction('&Export To Matlab', self)        
+        exportAction.setShortcut('Shift+Ctrl+S')
+        exportAction.setStatusTip('Export To Matlab')
+        exportAction.triggered.connect(self.export)
+
         openAction = QAction('&Open', self)        
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open')
@@ -375,6 +396,7 @@ class NodeWindow(QMainWindow):
         helpMenu = self.menuBar().addMenu('&Help')
         fileMenu.addAction(exitAction)
         fileMenu.addAction(saveAction)
+        fileMenu.addAction(exportAction)
         fileMenu.addAction(openAction)
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
@@ -459,6 +481,12 @@ class NodeWindow(QMainWindow):
         fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
         if fn[0] != '':
             self.scene.save(fn[0])
+
+    def export(self):
+        path = os.path.dirname(os.path.realpath(__file__))
+        fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
+        if fn[0] != '':
+            self.scene.export(fn[0])
 
     def select_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
