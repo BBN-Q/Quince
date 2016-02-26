@@ -61,6 +61,11 @@ class Wire(QGraphicsPathItem):
                 self.start_obj.wires_out.append(self)
                 self.set_end(drop_site.scenePos())
                 self.end_obj = drop_site
+
+                # Update the datatypes for sweep objects
+                if self.start_obj.parent.name == "Sweep":
+                    print("Attempting to update fields")
+                    self.start_obj.parent.update_fields_from_connector()
             else:
                 self.scene().window.set_status("Can't connect data connector to parameter.")
 

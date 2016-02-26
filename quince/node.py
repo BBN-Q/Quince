@@ -118,6 +118,37 @@ class Node(QGraphicsRectItem):
         self.parameters[param.name] = param
         self.itemResize(QPointF(0.0,0.0))
 
+    def update_fields_from_connector(self):
+        # This is peculiar to the "Sweep Nodes"
+        wires_out = self.outputs['Swept Param.'].wires_out
+        if len(wires_out) > 0:
+            wire_end = wires_out[0].end_obj
+            print("About to propagate...")
+
+            self.parameters['Start'].datatype = wire_end.value_box.datatype
+            self.parameters['Start'].value_box.datatype  = wire_end.value_box.datatype
+            self.parameters['Start'].value_box.min_value = wire_end.value_box.min_value
+            self.parameters['Start'].value_box.max_value = wire_end.value_box.max_value
+            self.parameters['Start'].value_box.increment = wire_end.value_box.increment
+            self.parameters['Start'].value_box.snap      = wire_end.value_box.snap
+            self.parameters['Start'].value_box.set_value(self.parameters['Start'].value())
+
+            self.parameters['Stop'].datatype = wire_end.value_box.datatype
+            self.parameters['Stop'].value_box.datatype  = wire_end.value_box.datatype
+            self.parameters['Stop'].value_box.min_value = wire_end.value_box.min_value
+            self.parameters['Stop'].value_box.max_value = wire_end.value_box.max_value
+            self.parameters['Stop'].value_box.increment = wire_end.value_box.increment
+            self.parameters['Stop'].value_box.snap      = wire_end.value_box.snap
+            self.parameters['Stop'].value_box.set_value(self.parameters['Stop'].value())
+
+            self.parameters['Incr.'].datatype = wire_end.value_box.datatype
+            self.parameters['Incr.'].value_box.datatype  = wire_end.value_box.datatype
+            self.parameters['Incr.'].value_box.min_value = -2*abs(wire_end.value_box.max_value)
+            self.parameters['Incr.'].value_box.max_value = 2*abs(wire_end.value_box.max_value)
+            self.parameters['Incr.'].value_box.increment = wire_end.value_box.increment
+            self.parameters['Incr.'].value_box.snap      = wire_end.value_box.snap
+            self.parameters['Incr.'].value_box.set_value(self.parameters['Incr.'].value())
+        
     def update_parameters_from(self, other_node):
         # Make sure they are of the same type
         if other_node.name == self.name:

@@ -198,6 +198,10 @@ class NodeScene(QGraphicsScene):
                 else:
                     self.window.set_status("Could not find output {} on node {}.".format(start_conn_name, start_node_name))
 
+            # Make sure that sweep nodes inherit the datatypes, etc., from their connectors
+            for n in [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]:
+                n.update_fields_from_connector()
+
     def save(self, filename):
         with open(filename, 'w') as df:
             nodes = [i for i in self.items() if isinstance(i, Node)]

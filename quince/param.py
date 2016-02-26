@@ -130,7 +130,7 @@ class SliderBox(QGraphicsRectItem):
         painter.setPen(QPen(QColor(160,200,220), self.height, cap=Qt.RoundCap))
         path = QPainterPath()
         path.moveTo(3+self.rect_radius, 15 + 0.5*self.height)
-        fill_size = (self.rect().width()-2*self.rect_radius)*(self._value-self.min_value)/self.max_value
+        fill_size = (self.rect().width()-2*self.rect_radius)*(self._value-self.min_value)/(self.max_value-self.min_value)
         path.lineTo(3+self.rect_radius+fill_size, 7.5 + 0.5+self.height)
         painter.drawPath(path)
 
@@ -240,7 +240,8 @@ class StringBox(QGraphicsRectItem):
         self.label.clip_text()
         self.refresh_label()
         self.update()
-        self.parent.set_changed_flag()
+        if hasattr(self, 'parent'):
+            self.parent.set_changed_flag()
 
     def refresh_label(self):
         label_width = self.label.boundingRect().topRight().x()
