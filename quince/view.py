@@ -147,6 +147,7 @@ class NodeScene(QGraphicsScene):
             data = json.load(df)
             nodes = data['nodes']
             wires = data['wires']
+            sweeps = data['sweeps']
 
             new_nodes = {} # Keep track of nodes we create
 
@@ -198,18 +199,33 @@ class NodeScene(QGraphicsScene):
                 else:
                     self.window.set_status("Could not find output {} on node {}.".format(start_conn_name, start_node_name))
 
+            self.window.sweep_view.model.clear()
+            sorted_sweeps = sorted(sweeps, key=lambda k: k['number'])
+            for s in sorted_sweeps:
+                item = QStandardItem(s['name'])
+                item.setCheckable(True)
+                item.setDropEnabled(False)
+                item.setEditable(False)
+                item.setCheckState(s['enabled'])
+                self.window.sweep_view.model.appendRow(item)
+
             # Make sure that sweep nodes inherit the datatypes, etc., from their connectors
             for n in [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]:
                 n.update_fields_from_connector()
 
     def save(self, filename):
         with open(filename, 'w') as df:
-            nodes = [i for i in self.items() if isinstance(i, Node)]
-            wires = [i for i in self.items() if isinstance(i, Wire)]
+            nodes  = [i for i in self.items() if isinstance(i, Node)]
+            wires  = [i for i in self.items() if isinstance(i, Wire)]
             
+            rowCount = self.window.sweep_view.model.rowCount()
+            sweeps = [self.window.sweep_view.model.item(i) for i in range(rowCount)]
+            sweep_dict = [{'number': i, 'name': s.text(), 'enabled': s.checkState()} for i,s in enumerate(sweeps)]
+
             data = {}
-            data['nodes'] = [n.dict_repr() for n in nodes]
-            data['wires'] = [n.dict_repr() for n in wires]
+            data['nodes']  = [n.dict_repr() for n in nodes]
+            data['wires']  = [n.dict_repr() for n in wires]
+            data['sweeps'] = sweep_dict
             json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
     def create_node_by_name(self, name):
