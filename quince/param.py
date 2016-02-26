@@ -82,6 +82,7 @@ class StringParameter(Parameter):
     def __init__(self, name, parent=None):
         super(StringParameter, self).__init__(name, parent=parent)
         self.value_box = StringBox(parent=self)
+        self.parent = parent
         
     def set_value(self, value):
         self.value_box.set_value(value)
@@ -91,6 +92,13 @@ class ComboParameter(StringParameter):
     def __init__(self, name, values, parent=None):
         super(ComboParameter, self).__init__(name, parent=parent)
         self.value_box = ComboBox(values, parent=self)
+
+class BooleanParameter(Parameter):
+    """docstring for Parameter"""
+    def __init__(self, name, parent=None):
+        super(BooleanParameter, self).__init__(name, parent=parent)
+        self.value_box = CheckBox(parent=self)
+        self.parent = parent
 
 class FilenameParameter(StringParameter):
     """docstring for Parameter"""
@@ -318,6 +326,38 @@ class ComboBox(StringBox):
             menu.exec_(event.screenPos())
         self.clicked = False
         
+class CheckBox(QGraphicsRectItem):
+    """docstring for CheckBox"""
+    def __init__(self, parent=None):
+        super(CheckBox, self).__init__(parent=parent)
+        self.parent = parent
+        self.setRect(self.rect().width()-17, -3, 13, 13)
+        self.unchecked_brush = QBrush(QColor(220,220,220))
+        self.checked_brush = QBrush(QColor(40,40,40))
+        self.setBrush(self.unchecked_brush)
+        self._value = False
+        self.clicked = False
+
+    def set_box_width(self, width):
+        self.setRect(width-17, -3, 13, 13)
+
+    def value(self):
+        return self._value
+
+    def set_value(self, value):
+        self._value = value
+        if self._value:
+            self.setBrush(self.checked_brush)
+        else:
+            self.setBrush(self.unchecked_brush)
+
+    def mousePressEvent(self, event):
+        self.clicked = True
+
+    def mouseReleaseEvent(self, event):
+        if self.clicked:
+            self.set_value(not self._value)
+        self.clicked = False
 
 class ValueBoxText(QGraphicsTextItem):
     """docstring for ValueBoxText"""
