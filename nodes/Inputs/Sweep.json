@@ -3,9 +3,9 @@
 "outputs": ["Swept Param."],
 "inputs": [],
 "parameters": [ 
-		{"name": "Start", "type": "float", "increment": 1.0, "snap": false, "low":0.0, "high": 1e9, "has_input": false},
-		{"name": "Stop",  "type": "float", "increment": 1.0, "snap": false, "low":0.0, "high": 1e9, "default": "1.0", "has_input": false},
-		{"name": "Incr.", "type": "float", "increment": 1.0, "snap": false, "low":-1e9, "high": 1e9, "default": "1.0", "has_input": false},
+		{"name": "Start", "type": "float", "increment": 1.0, "snap": false, "low":-1e12, "high": 1e12, "has_input": false},
+		{"name": "Stop",  "type": "float", "increment": 1.0, "snap": false, "low":-1e12, "high": 1e12, "default": "1.0", "has_input": false},
+		{"name": "Incr.", "type": "float", "increment": 1.0, "snap": false, "low":-1e12, "high": 1e12, "default": "1.0", "has_input": false},
 		{"name": "Steps",  "type": "int", "increment": 1, "snap": true, "low": 1, "high": 1e12, "has_input": false}
 	],
 "comment": "This node is special. The implementation details are largely contained within node.py"
