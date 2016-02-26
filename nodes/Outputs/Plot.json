@@ -1,5 +1,7 @@
 {"name":"Plot Data",
 	 "outputs": [],
 	 "inputs": ["Data"],
-	 "parameters":[]
+	 "parameters":[
+	 	{"name": "Type", "type": "str", "tip": "not yet"}
+	 ]
 	 }

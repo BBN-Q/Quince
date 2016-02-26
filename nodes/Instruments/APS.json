@@ -1,7 +1,7 @@
 {
 "name": "APS Slice",
 "outputs": ["Quadrature", "Marker1", "Marker2", "Marker3", "Marker4"],
-"inputs": [],
+"inputs": ["uW LO"],
 "parameters": [
 	{"name": "Address", "type": "str", "tip": "not yet"}
 	]
