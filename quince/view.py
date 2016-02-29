@@ -94,7 +94,11 @@ class NodeScene(QGraphicsScene):
                         if 'default' in p.keys():
                             pp.set_value(p['default'])
 
-                        # Special parameters have no input connectors
+                        # Generally, combo, bool, file parameters have no input connectors
+                        if p['type'] in ['combo', 'boolean', 'filename']:
+                            pp.has_input = False
+
+                        # If the has_input value is set in the json, pay attention
                         if 'has_input' in p.keys():
                             pp.has_input = p['has_input']
 
@@ -260,7 +264,7 @@ class NodeScene(QGraphicsScene):
     def inspector_change_name(self, before, after):
         matches = self.window.sweep_view.model.findItems(before)
         if len(matches) != 1:
-            print("There should be only one sweep matching the name '{}', but a different number were found".format(before))
+            pass
         else:
             matches[0].setText(after)
 

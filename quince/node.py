@@ -144,13 +144,23 @@ class Node(QGraphicsRectItem):
             self.collapse_box.setVisible(False)
 
         for i in range(len(self.parameter_order)):
-            self.parameters[self.parameter_order[i]].setPos(0, pos)
-            self.parameters[self.parameter_order[i]].set_collapsed(self.collapsed)
-            
-            if self.collapsed:
-                pos += self.parameters[self.parameter_order[i]].height_collapsed
+            # We completely hide parameters without inputs
+            if not self.parameters[self.parameter_order[i]].has_input:
+                if self.collapsed:
+                    self.parameters[self.parameter_order[i]].setVisible(False)
+                else:
+                    self.parameters[self.parameter_order[i]].setPos(0, pos)
+                    pos += self.parameters[self.parameter_order[i]].height
+                    self.parameters[self.parameter_order[i]].setVisible(True)
             else:
-                pos += self.parameters[self.parameter_order[i]].height
+                self.parameters[self.parameter_order[i]].setVisible(True)
+                self.parameters[self.parameter_order[i]].setPos(0, pos)
+                self.parameters[self.parameter_order[i]].set_collapsed(self.collapsed)
+            
+                if self.collapsed:
+                    pos += self.parameters[self.parameter_order[i]].height_collapsed
+                else:
+                    pos += self.parameters[self.parameter_order[i]].height
 
         self.setRect(0,0,self.min_width, pos)
         self.min_height = pos
