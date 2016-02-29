@@ -388,6 +388,11 @@ class NodeWindow(QMainWindow):
         selectAllConnectedAction.setStatusTip('Select All Connected')
         selectAllConnectedAction.triggered.connect(self.select_all_connected)
 
+        collapseAllAction = QAction('&Collapse All', self)        
+        collapseAllAction.setShortcut('Ctrl+K')
+        collapseAllAction.setStatusTip('Collapse All')
+        collapseAllAction.triggered.connect(self.collapse_all)
+
         duplicateAction = QAction('&Duplicate', self)        
         duplicateAction.setShortcut('Ctrl+D')
         duplicateAction.setStatusTip('Duplicate')
@@ -402,6 +407,7 @@ class NodeWindow(QMainWindow):
         fileMenu.addAction(openAction)
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
+        editMenu.addAction(collapseAllAction)
         editMenu.addAction(duplicateAction)
 
         # Setup layout
@@ -508,6 +514,11 @@ class NodeWindow(QMainWindow):
 
         for i in items:
             nodes_by_label[i].setSelected(True)
+
+    def collapse_all(self):
+        nodes = [i for i in self.scene.items() if isinstance(i, Node)]
+        for n in nodes:
+            n.change_collapsed_state(True)
 
     def duplicate(self):
         selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]

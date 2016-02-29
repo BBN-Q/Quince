@@ -25,7 +25,7 @@ class Parameter(QGraphicsEllipseItem):
         self.setPen(Qt.black)
         self.setZValue(1)
 
-        self.height = 42
+        self.height = 36
         self.height_collapsed = 15 
 
         self.temp_wire = None
@@ -65,7 +65,7 @@ class Parameter(QGraphicsEllipseItem):
         return self.value_box.value()
 
     def set_value(self, value):
-        self.value_box.set_value(float(value))
+        self.value_box.set_value(value)
         self.set_changed_flag()
 
     def paint(self, painter, options, widget):
@@ -77,7 +77,6 @@ class NumericalParameter(Parameter):
     def __init__(self, name, datatype, min_value, max_value,
                  increment, snap, parent=None):
         super(NumericalParameter, self).__init__(name, parent=parent)
-        # Slider Box
         self.datatype = datatype
         self.value_box = SliderBox(
             datatype, min_value, max_value, increment, snap,
@@ -101,14 +100,17 @@ class ComboParameter(StringParameter):
     """docstring for Parameter"""
     def __init__(self, name, values, parent=None):
         super(ComboParameter, self).__init__(name, parent=parent)
+        self.value_box.setParentItem(None)
         self.value_box = ComboBox(values, parent=self)
+    def set_collapsed(self, collapsed):
+        self.collapsed = collapsed
+        self.value_box.setVisible(not self.collapsed)
 
 class BooleanParameter(Parameter):
     """docstring for Parameter"""
     def __init__(self, name, parent=None):
         super(BooleanParameter, self).__init__(name, parent=parent)
         self.value_box = CheckBox(parent=self)
-        self.parent = parent
         self.height = 15
         self.height_collapsed = 15
 
@@ -119,11 +121,11 @@ class FilenameParameter(StringParameter):
     """docstring for Parameter"""
     def __init__(self, name, parent=None):
         super(FilenameParameter, self).__init__(name, parent=parent)
-        # SliderBox
+        self.value_box.setParentItem(None)
         self.value_box = FilenameBox(parent=self)
         
     def width(self):
-        return self.label.boundingRect().topRight().x() + 35
+        return self.label.boundingRect().topRight().x() + 20
 
 class SliderBox(QGraphicsRectItem):
     """docstring for SliderBox"""
@@ -192,7 +194,14 @@ class SliderBox(QGraphicsRectItem):
                 val = (val/self.snap)*self.snap
             self._value = self.datatype(val)
             changed = True
+        elif val < self.min_value:
+            self._value = self.datatype(self.min_value)
+            changed = True
+        else:
+            self._value = self.datatype(self.max_value)
+            changed = True
             
+        self.label.full_text = self.textFromValue(self._value)
         self.label.setPlainText(self.textFromValue(self._value))
         self.refresh_label()
         self.update()
@@ -301,7 +310,7 @@ class FilenameBox(StringBox):
     """docstring for FilenameBox"""
     def __init__(self, parent=None):
         super(FilenameBox, self).__init__(parent=parent)
-        self.browse_button = QGraphicsRectItem(self.rect().width()-28, -3, 30, 12, parent=self)
+        self.browse_button = QGraphicsRectItem(self.rect().width()-16, -3, 15, 12, parent=self)
         self.browse_button.setBrush(QBrush(QColor(220,220,220)))
         self.browse_button.mousePressEvent = lambda e: self.save_file()
         # self.browse_button.mouseReleaseEvent = lambda e: self.save_file()
@@ -316,14 +325,13 @@ class FilenameBox(StringBox):
     def refresh_label(self):
         label_width = self.label.boundingRect().topRight().x()
         self.label.setPos(3+0.5*self.rect().width()-0.5*label_width,15-5)
-        self.browse_button.setRect(self.rect().width()-28, -3, 30, 12)
+        self.browse_button.setRect(self.rect().width()-16, -3, 15, 12)
         self.update()
 
 class ComboBox(StringBox):
     """docstring for ComboBox"""
     def __init__(self, values, parent=None):
         super(ComboBox, self).__init__(parent=parent)
-        self.menu = QMenu(self.scene())
         self.values = values
 
     def menu_changed(self, action):
@@ -372,7 +380,7 @@ class CheckBox(QGraphicsRectItem):
         self.clicked = True
 
     def mouseReleaseEvent(self, event):
-        if self.clicked:
+        if self.clicked: 
             self.set_value(not self._value)
         self.clicked = False
 
@@ -413,7 +421,7 @@ class ValueBoxText(QGraphicsTextItem):
     def focusOutEvent(self, event):
         self.set_text_interaction(False)
         self.parent.set_value(self.toPlainText())
-        # self.full_text = self.toPlainText()
+        self.full_text = self.toPlainText()
         self.clip_text()
         self.parent.refresh_label()
         return super(ValueBoxText, self).focusOutEvent(event)

@@ -51,9 +51,9 @@ class Node(QGraphicsRectItem):
         self.min_height = 30
 
         # Dividing line and collapse button
-        self.divider = QGraphicsLineItem(25, 0, self.rect().width()-5, 0, self)
+        self.divider = QGraphicsLineItem(20, 0, self.rect().width()-5, 0, self)
         self.collapse_box = CollapseBox(parent=self)
-        self.collapse_box.setX(3)
+        self.collapse_box.setX(10)
 
         # Resize Handle
         self.resize_handle = ResizeHandle(parent=self)
@@ -78,7 +78,7 @@ class Node(QGraphicsRectItem):
         widths.extend([i.width() for i in self.inputs.values()])
         widths.append(self.label.boundingRect().topRight().x())
         self.min_width = max(widths)+20
-        self.itemResize(QPointF(0.0,0.0))
+        self.itemResize(QPointF(-100.0,-100.0))
 
     def value_changed(self, name):
         # Update the sweep parameters accordingly
@@ -129,11 +129,13 @@ class Node(QGraphicsRectItem):
     def change_collapsed_state(self, collapsed):
         self.collapsed = collapsed
 
+        self.collapse_box.setRotation(0.0 if self.collapsed else 90.0)
+
         # Update the positions
         pos = 32+15*(len(self.inputs)+len(self.outputs))
         if len(self.parameters) > 0:
             self.divider.setY(pos)
-            self.collapse_box.setY(pos-4)
+            self.collapse_box.setY(pos)
             self.divider.setVisible(True)
             self.collapse_box.setVisible(True)
             pos += 10
@@ -150,7 +152,7 @@ class Node(QGraphicsRectItem):
             else:
                 pos += self.parameters[self.parameter_order[i]].height
 
-        self.setRect(0,0,self.rect().width(), pos)
+        self.setRect(0,0,self.min_width, pos)
         self.min_height = pos
         self.update_min_width()
         self.itemResize(QPointF(0.0,0.0))
@@ -164,7 +166,6 @@ class Node(QGraphicsRectItem):
         wires_out = self.outputs['Swept Param.'].wires_out
         if len(wires_out) > 0:
             wire_end = wires_out[0].end_obj
-            print("About to propagate...")
 
             self.parameters['Start'].datatype = wire_end.value_box.datatype
             self.parameters['Start'].value_box.datatype  = wire_end.value_box.datatype
@@ -235,6 +236,8 @@ class Node(QGraphicsRectItem):
 
         conn_delta = actual_delta.toPoint()
         conn_delta.setY(0.0)
+
+        self.divider.setLine(20, 0, self.rect().width()-5, 0)
 
         # Move the outputs
         for k, v in self.outputs.items():
@@ -374,20 +377,42 @@ class RemoveBox(QGraphicsRectItem):
         self.parent.disconnect()
         self.scene().removeItem(self.parent)
 
-class CollapseBox(QGraphicsRectItem):
+class CollapseBox(QGraphicsItem):
     """docstring for CollapseBox"""
     def __init__(self, parent=None):
         super(CollapseBox, self).__init__(parent=parent)
         self.parent = parent
-        self.setRect(0,0,8,8)
-        self.setBrush(QColor(60,60,60))
-        self.setPen(QPen(Qt.black, 1.0))
         self.clicking = False
+        self.height = 8
+        self.width = 8
     
+        self.setRotation(90.0)
+
+    def paint(self, painter, options, widget):
+        # Draw our triangle    
+        painter.setPen(QPen(QColor(0,0,0), 1.0))
+        painter.setBrush(QColor(160,200,220))
+        
+        path = QPainterPath()
+        path.moveTo(-4,4)
+        path.lineTo(4,0)
+        path.lineTo(-4,-4)
+        path.lineTo(-4,4)
+        painter.drawPath(path)
+
+    def boundingRect(self):
+        return QRectF(QPointF(-5,-6), QSizeF(15, 15))
+
+    def shape(self):
+        p = QPainterPath()
+        p.addRect(-5, -6, 15, 15)
+        return p
+
     def mousePressEvent(self, event):
         self.clicking = True
 
     def mouseReleaseEvent(self, event):
         if self.clicking:
             self.parent.change_collapsed_state(not self.parent.collapsed)
+            self.setRotation(0.0 if self.parent.collapsed else 90.0)
         self.clicking = False
