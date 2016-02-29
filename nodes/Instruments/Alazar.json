@@ -1,0 +1,23 @@
+{
+"name": "Alazar",
+"outputs": ["Data"],
+"inputs": ["Trigger"],
+"parameters": [
+	{"name": "Address", "type": "str", "default": "1"},
+	{"name": "Mode", "type": "combo", "choices": ["digitizer", "averager"], "default": "digitizer"},
+	{"name": "Trigger Delay", "type": "float", "increment": 1e-8, "snap": false, "low": -10.0e-8, "high": 10.0e-8, "default": 0.0},
+	{"name": "Sample Rate", "type": "float", "increment": 100e6, "snap": false, "low":100e6, "high": 1e9, "default": 500e6, "tip": "Samp/sec"},
+	{"name": "Scale", "type": "float", "increment": 0.05, "snap": false, "low":0.01, "high": 0.5, "default": 0.1},
+	{"name": "Offset", "type": "float", "increment": 0.1, "snap": false, "low":-0.5, "high": 0.5, "default": 0.0},
+	{"name": "Coupling", "type": "combo", "choices": ["AC", "DC"], "default": "DC"},
+	{"name": "Bandwidth", "type": "combo", "choices": ["Full", "20 MHz"], "default": "Full"},
+	{"name": "Samples", "type": "int", "increment": 64, "snap": false, "low": 64, "high": 4096},
+	{"name": "Segments", "type": "int", "increment": 2000, "snap": false, "low": 1, "high": 512000},
+	{"name": "Waveforms", "type": "int", "increment": 1, "snap": false, "low": 1, "high": 1024},
+	{"name": "Round Robins", "type": "int", "increment": 1, "snap": false, "low": 1, "high": 1024},
+	{"name": "Trig. Level", "type": "float", "increment": 0.02, "snap": false, "low":0.01, "high": 0.5, "default": 0.1},
+	{"name": "Trig. Source", "type": "combo", "choices": ["A", "B", "Ext"], "default": "Ext"},
+	{"name": "Trig. Coupl.", "type": "combo", "choices": ["AC", "DC"], "default": "DC"},
+	{"name": "Trig. Slope", "type": "combo", "choices": ["rising", "falling"], "default": "rising"}
+	]
+}

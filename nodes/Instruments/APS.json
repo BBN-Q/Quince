@@ -3,10 +3,15 @@
 "outputs": ["Quadrature", "Marker1", "Marker2", "Marker3", "Marker4"],
 "inputs": ["uW LO"],
 "parameters": [
-	{"name": "Address", "type": "str", "tip": "not yet", "default": "192.168.4.1"},
-	{"name": "Sample Rate", "type": "float", "increment": 100e6, "snap": true, "low":100e6, "high": 1.2e9, "tip": "Samp/sec", "default": 1.2e9},
+	{"name": "Address", "type": "str", "default": "192.168.4.1"},
 	{"name": "Sequence File", "type": "filename", "tip": "Save to this filename."},
 	{"name": "Master", "type": "boolean", "default": false},
-	{"name": "Trigger Source", "type": "combo", "choices": ["Internal", "External", "System"], "tip": "Save to this filename.", "default": "External"}
+	{"name": "Delay", "type": "float", "increment": 1e-8, "snap": false, "low": -10.0e-8, "high": 10.0e-8, "default": 0.0, "tip": "sec"},
+	{"name": "Trigger Interval", "type": "float", "increment": 0.0001, "snap": false, "low": 0, "high": 0.01, "tip": "sec", "default": 0.001},
+	{"name": "Trigger Source", "type": "combo", "choices": ["Internal", "External", "System"], "default": "External"},
+	{"name": "Ch1. Amp", "type": "float", "increment": 0.1, "snap": false, "low": 0, "high": 1, "default": 0.3},
+	{"name": "Ch1. Offset", "type": "float", "increment": 0.01, "snap": false, "low": -0.5, "high": 0.5, "default": 0.0},
+	{"name": "Ch2. Amp", "type": "float", "increment": 0.1, "snap": false, "low": 0, "high": 1, "default": 0.3},
+	{"name": "Ch2. Offset", "type": "float", "increment": 0.01, "snap": false, "low": -0.5, "high": 0.5, "default": 0.0}
 	]
 }
