@@ -1,0 +1,10 @@
+{
+"name": "Modify APS Marker",
+"outputs": ["Marker Out"],
+"inputs": ["Marker In"],
+"parameters": [
+	{"name": "Delay", "type": "float", "increment": 1e-8, "snap": false, "low": -10.0e-8, "high": 10.0e-8, "default": 0, "tip": "s"},
+	{"name": "Gate Buffer", "type": "float", "increment": 1e-8, "snap": false, "low": -10.0e-8, "high": 10.0e-8, "default": 0, "tip": "s"},
+	{"name": "Min Pulse Width", "type": "float", "increment": 1e-8, "snap": false, "low": -10.0e-8, "high": 10.0e-8, "default": 0, "tip": "s"}
+	]
+}

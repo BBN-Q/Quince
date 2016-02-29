@@ -1,0 +1,397 @@
+{
+    "nodes": [
+        {
+            "label": "Pow Sweep",
+            "name": "Sweep",
+            "params": {
+                "Incr.": 0.25,
+                "Start": 10.0,
+                "Steps": 40,
+                "Stop": 20.0
+            },
+            "pos": [
+                -802.8977970581243,
+                -254.29926568604137
+            ]
+        },
+        {
+            "label": "Freq Sweep",
+            "name": "Sweep",
+            "params": {
+                "Incr.": 300000000.03333336,
+                "Start": 1000000000.0,
+                "Steps": 30,
+                "Stop": 10000000001.0
+            },
+            "pos": [
+                -806.1892123462841,
+                128.0991494574407
+            ]
+        },
+        {
+            "label": "Boxcar Filter 1",
+            "name": "Boxcar Filter",
+            "params": {
+                "Boxcar Start": 4,
+                "Boxcar Stop": 86,
+                "I.F. Freq.": 0,
+                "Sample Rate": 100000000.0
+            },
+            "pos": [
+                155.89045319328852,
+                92.38984176857954
+            ]
+        },
+        {
+            "label": "Plot Data 1",
+            "name": "Plot Data",
+            "params": {
+                "Type": ""
+            },
+            "pos": [
+                331.56176653869716,
+                52.203593617668986
+            ]
+        },
+        {
+            "label": "Output to HDF5 1",
+            "name": "Output to HDF5",
+            "params": {
+                "Compression": "zip",
+                "Filename": "thing.h5"
+            },
+            "pos": [
+                331.56176653869716,
+                136.02062547528254
+            ]
+        },
+        {
+            "label": "Digital Demod 1",
+            "name": "Digital Demod",
+            "params": {
+                "Bandwidth": 5000000.0,
+                "Decim. 1": 4,
+                "Decim. 2": 1,
+                "Decim. 3": 1,
+                "I.F. Freq.": 1000000.0,
+                "Sample Rate": 100000000.0
+            },
+            "pos": [
+                -11.743610521937967,
+                93.53802028717698
+            ]
+        },
+        {
+            "label": "Alazar 1",
+            "name": "Alazar",
+            "params": {
+                "Address": "1",
+                "Bandwidth": "Full",
+                "Coupling": "DC",
+                "Mode": "digitizer",
+                "Offset": 0.0,
+                "Round Robins": 1,
+                "Sample Rate": 500000000.0,
+                "Samples": 64,
+                "Scale": 0.1,
+                "Segments": 1,
+                "Trig. Coupl.": "DC",
+                "Trig. Level": 0.1,
+                "Trig. Slope": "rising",
+                "Trig. Source": "Ext",
+                "Trigger Delay": 0.0,
+                "Waveforms": 1
+            },
+            "pos": [
+                -176.49438494783317,
+                96.73835230224674
+            ]
+        },
+        {
+            "label": "Modify APS Quad. 2",
+            "name": "Modify APS Quad.",
+            "params": {
+                "Amp. Factor": 0.0,
+                "Delay": -1e-08,
+                "Phase Skew": 15.0
+            },
+            "pos": [
+                -178.84278456511268,
+                -147.21826201971675
+            ]
+        },
+        {
+            "label": "BNC845 2",
+            "name": "BNC845",
+            "params": {
+                "ALC": true,
+                "Address": "192.168.5.165",
+                "Freq.": 6419700000.0,
+                "Modulation": false,
+                "Output": false,
+                "Power": 16.0,
+                "Pulse Modulation": false,
+                "Pulse Source": "Internal",
+                "Ref. Source": "Internal"
+            },
+            "pos": [
+                -613.794542265789,
+                126.95196658526947
+            ]
+        },
+        {
+            "label": "BNC845 1",
+            "name": "BNC845",
+            "params": {
+                "ALC": true,
+                "Address": "192.168.5.165",
+                "Freq.": 6419700000.0,
+                "Modulation": false,
+                "Output": false,
+                "Power": 16.0,
+                "Pulse Modulation": false,
+                "Pulse Source": "Internal",
+                "Ref. Source": "Internal"
+            },
+            "pos": [
+                -617.79288219044,
+                -346.111608392938
+            ]
+        },
+        {
+            "label": "Modify APS Quad. 1",
+            "name": "Modify APS Quad.",
+            "params": {
+                "Amp. Factor": 0.0,
+                "Delay": 0.0,
+                "Phase Skew": 0.0
+            },
+            "pos": [
+                -176.81949186400632,
+                -453.5305148459903
+            ]
+        },
+        {
+            "label": "APS2 2",
+            "name": "APS2",
+            "params": {
+                "Address": "192.168.4.1",
+                "Ch1. Amp": 0.3,
+                "Ch1. Offset": 0.0,
+                "Ch2. Amp": 0.3,
+                "Ch2. Offset": 0.0,
+                "Delay": 0.0,
+                "Master": false,
+                "Sequence File": "",
+                "Trigger Interval": 0.001,
+                "Trigger Source": "External"
+            },
+            "pos": [
+                -355.0218787354783,
+                -16.50612494978938
+            ]
+        },
+        {
+            "label": "APS2 1",
+            "name": "APS2",
+            "params": {
+                "Address": "192.168.4.1",
+                "Ch1. Amp": 0.3,
+                "Ch1. Offset": 0.0,
+                "Ch2. Amp": 0.3,
+                "Ch2. Offset": 0.0,
+                "Delay": 0.0,
+                "Master": false,
+                "Sequence File": "",
+                "Trigger Interval": 0.001,
+                "Trigger Source": "External"
+            },
+            "pos": [
+                -355.0295641828302,
+                -370.9189789781623
+            ]
+        },
+        {
+            "label": "Qubit 1",
+            "name": "Qubit",
+            "params": {
+                "Cutoff": 0,
+                "Drag Scale": 0,
+                "Freq.": 0,
+                "Length": 1e-08,
+                "pi2Amp": 0,
+                "piAmp": 0,
+                "shape": "drag",
+                "sigma": 5e-09
+            },
+            "pos": [
+                171.49992891861484,
+                -168.02652605889443
+            ]
+        }
+    ],
+    "sweeps": [
+        {
+            "enabled": 2,
+            "name": "Freq Sweep",
+            "number": 0
+        },
+        {
+            "enabled": 0,
+            "name": "Pow Sweep",
+            "number": 1
+        }
+    ],
+    "wires": [
+        {
+            "end": {
+                "connector_name": "Power",
+                "node": "BNC845 1"
+            },
+            "start": {
+                "connector_name": "Swept Param.",
+                "node": "Pow Sweep"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Freq.",
+                "node": "BNC845 2"
+            },
+            "start": {
+                "connector_name": "Swept Param.",
+                "node": "Freq Sweep"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Data",
+                "node": "Output to HDF5 1"
+            },
+            "start": {
+                "connector_name": "Integrated",
+                "node": "Boxcar Filter 1"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Data",
+                "node": "Plot Data 1"
+            },
+            "start": {
+                "connector_name": "Integrated",
+                "node": "Boxcar Filter 1"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Data",
+                "node": "Boxcar Filter 1"
+            },
+            "start": {
+                "connector_name": "Filtered",
+                "node": "Digital Demod 1"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Data",
+                "node": "Digital Demod 1"
+            },
+            "start": {
+                "connector_name": "Data",
+                "node": "Alazar 1"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Trigger",
+                "node": "Alazar 1"
+            },
+            "start": {
+                "connector_name": "Marker2",
+                "node": "APS2 2"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Meas. Gate",
+                "node": "Qubit 1"
+            },
+            "start": {
+                "connector_name": "Marker1",
+                "node": "APS2 2"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Meas. Quad.",
+                "node": "Qubit 1"
+            },
+            "start": {
+                "connector_name": "Quad. Out",
+                "node": "Modify APS Quad. 2"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Quad. In",
+                "node": "Modify APS Quad. 2"
+            },
+            "start": {
+                "connector_name": "Quadrature",
+                "node": "APS2 2"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "uW LO",
+                "node": "APS2 2"
+            },
+            "start": {
+                "connector_name": "Output",
+                "node": "BNC845 2"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "uW LO",
+                "node": "APS2 1"
+            },
+            "start": {
+                "connector_name": "Output",
+                "node": "BNC845 1"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Qubit Gate",
+                "node": "Qubit 1"
+            },
+            "start": {
+                "connector_name": "Marker1",
+                "node": "APS2 1"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Qubit Quad.",
+                "node": "Qubit 1"
+            },
+            "start": {
+                "connector_name": "Quad. Out",
+                "node": "Modify APS Quad. 1"
+            }
+        },
+        {
+            "end": {
+                "connector_name": "Quad. In",
+                "node": "Modify APS Quad. 1"
+            },
+            "start": {
+                "connector_name": "Quadrature",
+                "node": "APS2 1"
+            }
+        }
+    ]
+}
