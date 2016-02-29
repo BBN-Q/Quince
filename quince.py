@@ -4,7 +4,7 @@
 #
 # This file runs the main loop
 
-from PyQt5.QtGui import *
+from PyQt5.QtWidgets import QApplication
 import sys
 
 from quince.view import *
