@@ -35,6 +35,12 @@ class Connector(QGraphicsEllipseItem):
             self.setBrush(Qt.white)
             self.setPen(Qt.blue)
 
+    def width(self):
+        return self.label.boundingRect().topRight().x()
+
+    def height(self):
+        return 15
+
     def mousePressEvent(self, event):
         self.temp_wire = self.parent.create_wire(self) # Avoid circular imports
         self.scene().addItem(self.temp_wire)

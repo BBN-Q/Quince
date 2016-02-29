@@ -22,9 +22,8 @@ class Node(QGraphicsRectItem):
         self.outputs = {}
         self.inputs = {}
         self.parameters = {}
-
-        # self.parameter_locs = {}
-        # self.parameter_locs_collapsed = {}
+        self.parameter_order = {}
+        self.collapsed = False
 
         self.bg_color = QColor(240,240,240)
         self.edge_color = QColor(200,200,200)
@@ -41,7 +40,6 @@ class Node(QGraphicsRectItem):
         self.title_bar.setBrush(QBrush(self.title_color))
         self.title_bar.setPen(QPen(QColor(200,200,200), 0.75))
         self.label = TitleText(self.name, parent=self)
-        
         self.label.setDefaultTextColor(Qt.white)
 
         if self.label.boundingRect().topRight().x() > 80:
@@ -51,6 +49,11 @@ class Node(QGraphicsRectItem):
             self.min_width = 80.0
 
         self.min_height = 30
+
+        # Dividing line and collapse button
+        self.divider = QGraphicsLineItem(25, 0, self.rect().width()-5, 0, self)
+        self.collapse_box = CollapseBox(parent=self)
+        self.collapse_box.setX(3)
 
         # Resize Handle
         self.resize_handle = ResizeHandle(parent=self)
@@ -69,6 +72,14 @@ class Node(QGraphicsRectItem):
         # Synchronizing parameters
         self.changing = False
    
+    def update_min_width(self):
+        widths = [p.width() for p in self.parameters.values()]
+        widths.extend([o.width() for o in self.outputs.values()])
+        widths.extend([i.width() for i in self.inputs.values()])
+        widths.append(self.label.boundingRect().topRight().x())
+        self.min_width = max(widths)+20
+        self.itemResize(QPointF(0.0,0.0))
+
     def value_changed(self, name):
         # Update the sweep parameters accordingly
         if self.name == "Sweep":
@@ -98,28 +109,55 @@ class Node(QGraphicsRectItem):
         connector.setParentItem(self)
         connector.parent = self
         connector.setPos(self.rect().width(),30+15*(len(self.outputs)+len(self.inputs)))
-        self.setRect(0,0,self.rect().width(),self.rect().height()+15)
-        self.min_height += 15
         self.outputs[connector.name] = connector
-        self.itemResize(QPointF(0.0,0.0))
+        self.change_collapsed_state(self.collapsed) # Just for resizing in this case
 
     def add_input(self, connector):
         connector.setParentItem(self)
         connector.parent = self
         connector.setPos(0,30+15*(len(self.inputs)+len(self.outputs)))
-        self.setRect(0,0,self.rect().width(),self.rect().height()+15)
-        self.min_height += 15
         self.inputs[connector.name] = connector
-        self.itemResize(QPointF(0.0,0.0))
+        self.change_collapsed_state(self.collapsed) # Just for resizing in this case
 
     def add_parameter(self, param):
         param.setParentItem(self)
         param.parent = self
-        self.setRect(0,0,self.rect().width(),self.rect().height()+42)
-        self.min_height += 42
-        param.setPos(0,30+15*(len(self.inputs)+len(self.outputs))+42*len(self.parameters))
         self.parameters[param.name] = param
+        self.parameter_order[len(self.parameter_order)] = param.name
+        self.change_collapsed_state(self.collapsed) # Just for resizing in this case
+
+    def change_collapsed_state(self, collapsed):
+        self.collapsed = collapsed
+
+        # Update the positions
+        pos = 32+15*(len(self.inputs)+len(self.outputs))
+        if len(self.parameters) > 0:
+            self.divider.setY(pos)
+            self.collapse_box.setY(pos-4)
+            self.divider.setVisible(True)
+            self.collapse_box.setVisible(True)
+            pos += 10
+        else:
+            self.divider.setVisible(False)
+            self.collapse_box.setVisible(False)
+
+        for i in range(len(self.parameter_order)):
+            self.parameters[self.parameter_order[i]].setPos(0, pos)
+            self.parameters[self.parameter_order[i]].set_collapsed(self.collapsed)
+            
+            if self.collapsed:
+                pos += self.parameters[self.parameter_order[i]].height_collapsed
+            else:
+                pos += self.parameters[self.parameter_order[i]].height
+
+        self.setRect(0,0,self.rect().width(), pos)
+        self.min_height = pos
+        self.update_min_width()
         self.itemResize(QPointF(0.0,0.0))
+    
+        for k, v in self.parameters.items():
+            for w in v.wires_in:
+                w.set_end(v.scenePos())
 
     def update_fields_from_connector(self):
         # This is peculiar to the "Sweep Nodes"
@@ -335,3 +373,21 @@ class RemoveBox(QGraphicsRectItem):
     def mouseReleaseEvent(self, event):
         self.parent.disconnect()
         self.scene().removeItem(self.parent)
+
+class CollapseBox(QGraphicsRectItem):
+    """docstring for CollapseBox"""
+    def __init__(self, parent=None):
+        super(CollapseBox, self).__init__(parent=parent)
+        self.parent = parent
+        self.setRect(0,0,8,8)
+        self.setBrush(QColor(60,60,60))
+        self.setPen(QPen(Qt.black, 1.0))
+        self.clicking = False
+    
+    def mousePressEvent(self, event):
+        self.clicking = True
+
+    def mouseReleaseEvent(self, event):
+        if self.clicking:
+            self.parent.change_collapsed_state(not self.parent.collapsed)
+        self.clicking = False

@@ -25,6 +25,9 @@ class Parameter(QGraphicsEllipseItem):
         self.setPen(Qt.black)
         self.setZValue(1)
 
+        self.height = 42
+        self.height_collapsed = 15 
+
         self.temp_wire = None
         self.wires_in  = []
         self.wires_out = []
@@ -47,6 +50,13 @@ class Parameter(QGraphicsEllipseItem):
     def set_interactive(self, value):
         self.interactive = value
         self.value_box.interactive = value
+
+    def set_collapsed(self, collapsed):
+        self.collapsed = collapsed
+        self.value_box.setVisible(not self.collapsed)
+
+    def width(self):
+        return self.label.boundingRect().topRight().x()
 
     def set_box_width(self, width):
         self.value_box.set_box_width(width)
@@ -99,6 +109,11 @@ class BooleanParameter(Parameter):
         super(BooleanParameter, self).__init__(name, parent=parent)
         self.value_box = CheckBox(parent=self)
         self.parent = parent
+        self.height = 15
+        self.height_collapsed = 15
+
+    def width(self):
+        return self.label.boundingRect().topRight().x() + 18
 
 class FilenameParameter(StringParameter):
     """docstring for Parameter"""
@@ -107,6 +122,9 @@ class FilenameParameter(StringParameter):
         # SliderBox
         self.value_box = FilenameBox(parent=self)
         
+    def width(self):
+        return self.label.boundingRect().topRight().x() + 35
+
 class SliderBox(QGraphicsRectItem):
     """docstring for SliderBox"""
 
@@ -178,7 +196,6 @@ class SliderBox(QGraphicsRectItem):
         self.label.setPlainText(self.textFromValue(self._value))
         self.refresh_label()
         self.update()
-        print("New value of {} is: {}, text box value is {}".format(self.parent.name, self._value, self.label.toPlainText()))
         if changed:
             self.parent.set_changed_flag()
 
