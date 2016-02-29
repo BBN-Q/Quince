@@ -72,6 +72,7 @@ class NodeScene(QGraphicsScene):
                 # Create function for dropping node on canvas
                 def create(the_data, cat_name):
                     node = Node(the_data['name'])
+                    node.cat_name = cat_name
                     for op in the_data['outputs']:
                         node.add_output(Connector(op, 'output'))
                     for ip in the_data['inputs']:
@@ -232,8 +233,9 @@ class NodeScene(QGraphicsScene):
 
     def export(self, filename):
         with open(filename, 'w') as df:
-            nodes  = [i for i in self.items() if isinstance(i, Node)]
-            # wires  = [i for i in self.items() if isinstance(i, Wire)]
+            instr_nodes = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Instruments"]
+            meas_nodes  = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Filters"]
+            sweep_nodes = [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]
             
             # rowCount = self.window.sweep_view.model.rowCount()
             # sweeps = [self.window.sweep_view.model.item(i) for i in range(rowCount)]
@@ -241,9 +243,9 @@ class NodeScene(QGraphicsScene):
 
             data = {}
             data['CWMode'] = False
-            data['instruments']  = {n.label.toPlainText(): n.matlab_repr() for n in nodes}
-            # data['wires']  = [n.dict_repr() for n in wires]
-            # data['sweeps'] = sweep_dict
+            data['instruments']  = {n.label.toPlainText(): n.matlab_repr() for n in instr_nodes}
+            data['measurements'] = {n.label.toPlainText(): n.matlab_repr() for n in meas_nodes}
+            data['sweeps']       = {n.label.toPlainText(): n.matlab_repr() for n in sweep_nodes}
             json.dump(data, df, sort_keys=True, indent=2, separators=(',', ': '))
 
     def create_node_by_name(self, name):
