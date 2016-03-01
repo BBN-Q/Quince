@@ -12,8 +12,15 @@ This project is intended as an alternative means of defining the topology of an 
 3. Node parameters (e.g. frequency on a signal generator) are set manually or associated with sweeps.
 4. The graphs are saved to JSON format describing the nodes (with parameters), and wires between them.
 
-## Requirements ##
+## Dependencies ##
 
 Python Packages
 1. PyQt5
-2. networkx (maybe)
+2. networkx
+
+### Linux ###
+
+PyQT5 needs to know where to find the platform plugins.  On Anaconda Linux install this does not seem to work without explicitly pointing it to the plugin path:
+```shell
+QT_QPA_PLATFORM_PLUGIN_PATH=/home/cryan/anaconda3/lib/qt5/plugins/ && python quince.py
+```
