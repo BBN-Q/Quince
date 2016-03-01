@@ -102,6 +102,12 @@ class NodeScene(QGraphicsScene):
                         if 'has_input' in p.keys():
                             pp.has_input = p['has_input']
 
+                        # For matlab export, we need the matlab names and categories
+                        if 'matlab_name' in p.keys():
+                            pp.matlab_name = p['matlab_name']
+                        if 'matlab_cat' in p.keys():
+                            pp.matlab_cat = p['matlab_cat']
+
                         # Special parameters cannot be directly edited
                         if 'interactive' in p.keys():
                             pp.set_interactive(p['interactive'])

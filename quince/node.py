@@ -301,8 +301,17 @@ class Node(QGraphicsRectItem):
 
     def matlab_repr(self):
         params = {}
-        for k, v in self.parameters.items():
-            params[k] = v.value()
+        params_with_cat    = [v for v in self.parameters.values() if hasattr(v, 'matlab_cat')]
+        params_without_cat = [v for v in self.parameters.values() if not hasattr(v, 'matlab_cat')]
+
+        # Construct a dictionary for each category and place it in params
+        cats = set([v.matlab_cat for v in params_with_cat])
+        for cat in cats:
+            params[cat] = {v.matlab_name: v.value() for v in params_with_cat if v.matlab_cat == cat}
+
+        # Add the parameters without a particular category
+        for v in params_without_cat:
+            params[v.name] = v.value()
 
         params['deviceName'] = self.name
         return params
