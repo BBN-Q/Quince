@@ -304,6 +304,9 @@ class Node(QGraphicsRectItem):
         params_with_cat    = [v for v in self.parameters.values() if hasattr(v, 'matlab_cat')]
         params_without_cat = [v for v in self.parameters.values() if not hasattr(v, 'matlab_cat')]
 
+        # Lower case first char
+        lcfc = lambda s: s[:1].lower() + s[1:] if s else ''
+
         # Construct a dictionary for each category and place it in params
         cats = set([v.matlab_cat for v in params_with_cat])
         for cat in cats:
@@ -311,7 +314,7 @@ class Node(QGraphicsRectItem):
 
         # Add the parameters without a particular category
         for v in params_without_cat:
-            params[v.name] = v.value()
+            params[lcfc(v.name)] = v.value()
 
         params['deviceName'] = self.name
         return params
