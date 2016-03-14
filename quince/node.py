@@ -314,7 +314,10 @@ class Node(QGraphicsRectItem):
 
         # Add the parameters without a particular category
         for v in params_without_cat:
-            params[lcfc(v.name)] = v.value()
+            if hasattr(v, 'matlab_name'):
+                params[lcfc(v.matlab_name)] = v.value()
+            else:
+                params[lcfc(v.name)] = v.value()
 
         # Add the source name when needed
         if self.cat_name == "Filters":
