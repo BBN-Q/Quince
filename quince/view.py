@@ -491,22 +491,40 @@ class NodeWindow(QMainWindow):
             self.scene.removeItem(self.svgitem)
 
     def load(self):
-        path = os.path.dirname(os.path.realpath(__file__))
+        settings = QSettings("BBN", "Quince")
+        # Load the last_dir setting if it exists, otherwise use the path to this file
+        path = settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
+
         fn = QFileDialog.getOpenFileName(self, 'Load Graph', path)
         if fn[0] != '':
             self.scene.load(fn[0])
 
+            # Push this directory to qsettings
+            settings.setValue("last_dir", QVariant(fn[0]))
+
     def save(self):
-        path = os.path.dirname(os.path.realpath(__file__))
+        settings = QSettings("BBN", "Quince")
+        # Load the last_dir setting if it exists, otherwise use the path to this file
+        path = settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
+
         fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
         if fn[0] != '':
             self.scene.save(fn[0])
 
+            # Push this directory to qsettings
+            settings.setValue("last_dir", QVariant(fn[0]))
+
     def export(self):
-        path = os.path.dirname(os.path.realpath(__file__))
+        settings = QSettings("BBN", "Quince")
+        # Load the last_export_dir setting if it exists, otherwise use the path to this file
+        path = settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
+        
         fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
         if fn[0] != '':
             self.scene.export(fn[0])
+
+            # Push this directory to qsettings
+            settings.setValue("last_export_dir", QVariant(fn[0]))
 
     def select_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
