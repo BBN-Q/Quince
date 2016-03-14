@@ -316,6 +316,12 @@ class Node(QGraphicsRectItem):
         for v in params_without_cat:
             params[lcfc(v.name)] = v.value()
 
+        # Add the source name when needed
+        if self.cat_name == "Filters":
+            for k, v in self.inputs.items():
+                for w in v.wires_in:
+                    params['dataSource'] = w.start_obj.parent.label.toPlainText()
+            
         params['deviceName'] = self.name
         return params
 
