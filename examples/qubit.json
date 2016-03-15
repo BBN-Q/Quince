@@ -46,7 +46,7 @@
             "label": "Plot Data 1",
             "name": "Plot Data",
             "params": {
-                "Type": ""
+                "Plot Mode": "real/imag"
             },
             "pos": [
                 331.56176653869716,
@@ -277,7 +277,7 @@
                 "node": "Digital Demod 1"
             },
             "start": {
-                "connector_name": "Data",
+                "connector_name": "Channel 1",
                 "node": "Alazar 1"
             }
         },
