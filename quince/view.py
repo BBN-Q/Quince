@@ -248,12 +248,8 @@ class NodeScene(QGraphicsScene):
     def export(self, filename):
         with open(filename, 'w') as df:
             instr_nodes = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Instruments"]
-            meas_nodes  = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Filters"]
+            meas_nodes  = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Filters" and i.name != "Stream Select X6"]
             sweep_nodes = [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]
-            
-            # rowCount = self.window.sweep_view.model.rowCount()
-            # sweeps = [self.window.sweep_view.model.item(i) for i in range(rowCount)]
-            # sweep_dict = [{'number': i, 'name': s.text(), 'enabled': s.checkState()} for i,s in enumerate(sweeps)]
 
             data = {}
             data['CWMode'] = False

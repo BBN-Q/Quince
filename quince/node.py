@@ -314,6 +314,33 @@ class Node(QGraphicsRectItem):
         # Overall conversion
         matlabize = lambda s: lcfc(rws(s))
 
+        for v in params_without_cat:
+            if not hasattr(v, 'matlab_name'):
+                v.matlab_name = matlabize(v.name)
+
+        for v in params_with_cat:
+            if not hasattr(v, 'matlab_name'):
+                v.matlab_name = matlabize(v.name)
+
+        # For the Alazar, push the channel information into a separate raw stream dict
+        # if self.name == "Alazar":
+
+
+        # For the X6, pull the stream information into the X6 dict
+        if self.name == "X6":  
+            for k, v in {"1": self.outputs['Channel 1'], "2": self.outputs['Channel 2']}.items():
+                i = 0
+                for i, w in enumerate(v.wires_out):
+                    if i > 1: 
+                        print("Too many output streams selected.")
+                    else:
+                        for p in w.end_obj.parent.parameters.values():
+                            if not hasattr(p, 'matlab_name'):
+                                p.matlab_name = matlabize(p.name)
+                            p.matlab_cat = "s{}{}".format(k,i+1)
+                            params_with_cat.append(p)
+                    i += 1
+
         # Construct a dictionary for each category and place it in params
         cats = set([v.matlab_cat for v in params_with_cat])
         for cat in cats:
@@ -321,10 +348,7 @@ class Node(QGraphicsRectItem):
 
         # Add the parameters without a particular category
         for v in params_without_cat:
-            if hasattr(v, 'matlab_name'):
-                params[matlabize(v.matlab_name)] = v.value()
-            else:
-                params[matlabize(v.name)] = v.value()
+            params[v.matlab_name] = v.value()
 
         # Add the source name when needed
         if self.cat_name == "Filters":
