@@ -1,0 +1,8 @@
+{
+"name": "Stream Select Alazar",
+"outputs": ["Stream"],
+"allowed_destinations": {"Stream": "Data"},
+"inputs": ["Channel"],
+"parameters": [
+	]
+}

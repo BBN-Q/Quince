@@ -2,6 +2,6 @@
 	 "outputs": [],
 	 "inputs": ["Data"],
 	 "parameters":[
-	 	{"name": "Type", "type": "str", "tip": "not yet"}
+		 {"name": "Plot Mode", "type": "combo", "choices": ["real/imag", "amp/phase", "quad"], "default": "real/imag"}
 	 ]
-	 }
+}

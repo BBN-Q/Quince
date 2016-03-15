@@ -1,0 +1,16 @@
+{
+"name": "X6",
+"outputs": ["Channel 1", "Channel 2"],
+"allowed_destinations": {"Channel 1": "Channel", "Channel 2": "Channel"},
+"inputs": ["Trigger"],
+"parameters": [
+	{"name": "Device ID", "type": "str"},
+	{"name": "Ref. Source", "matlab_name": "reference", "type": "combo", "choices": ["internal", "external"], "default": "external"},
+	{"name": "Enable Raw", "matlab_name": "enableRawStreams", "type": "boolean", "default": false},
+	{"name": "Mode", "matlab_name": "digitizerMode", "type": "combo", "choices": ["digitizer", "averager"], "default": "digitizer"},
+	{"name": "Samples",  "matlab_name": "recordLength", "matlab_cat": "averager","type": "int", "increment": 64, "snap": false, "low": 64, "high": 4096, "default": 1024},
+	{"name": "Segments", "matlab_name": "nbrSegments", "matlab_cat": "averager", "type": "int", "increment": 2000, "snap": false, "low": 1, "high": 512000},
+	{"name": "Waveforms", "matlab_name": "nbrWaveforms", "matlab_cat": "averager", "type": "int", "increment": 1, "snap": false, "low": 1, "high": 1024},
+	{"name": "Round Robins", "matlab_name": "nbrRoundRobins", "matlab_cat": "averager", "type": "int", "increment": 1, "snap": false, "low": 1, "high": 1024}
+	]
+}

@@ -1,0 +1,17 @@
+{
+"name": "Stream Select X6",
+"outputs": ["Stream"],
+"allowed_destinations": {"Stream": "Data"},
+"inputs": ["Channel"],
+"parameters": [
+	{"name": "Integrate", "matlab_name": "digitizerMode", "type": "combo", "choices": ["None", "Once", "Twice"], "default": "None", "has_input": false},
+	{"name": "Demodulate", "matlab_name": "digitizerMode", "type": "combo", "choices": ["None", "Once", "Twice"], "default": "None", "has_input": false},
+	{"name": "IF Freq.", "matlab_name": "IFfreq", "type": "float", "increment": 1e6, "snap": true, "low": 0, "high": 0.1e9, "tip": "Hz", "has_input": false},
+	{"name": "Demod Kernel", "type": "str", "has_input": false},
+	{"name": "Demod Kernel Bias", "type": "str", "has_input": false},
+	{"name": "Raw Kernel", "type": "str", "has_input": false},
+	{"name": "Raw Kernel Bias", "type": "str", "has_input": false},
+	{"name": "Threshold", "matlab_name": "IFfreq", "type": "float", "increment": 1e6, "snap": true, "low": 0, "high": 0.1e9, "tip": "Hz", "has_input": false},
+	{"name": "Threshold Invert", "matlab_name": "thresholdInvert", "type": "boolean", "default": false, "has_input": false}
+	]
+}

@@ -1,6 +1,7 @@
 {
 "name": "Alazar",
-"outputs": ["Data"],
+"outputs": ["Channel 1", "Channel 2"],
+"allowed_destinations": {"Channel 1": "Channel", "Channel 2": "Channel"},
 "inputs": ["Trigger"],
 "parameters": [
 	{"name": "Address", "type": "str", "default": "1"},
@@ -11,7 +12,7 @@
 	{"name": "Offset", "matlab_name": "verticalOffset", "matlab_cat": "vertical", "type": "float", "increment": 0.1, "snap": false, "low":-0.5, "high": 0.5, "default": 0.0},
 	{"name": "Coupling", "matlab_name": "verticalCoupling", "matlab_cat": "vertical", "type": "combo", "choices": ["AC", "DC"], "default": "DC"},
 	{"name": "Bandwidth", "matlab_name": "bandwidth", "matlab_cat": "vertical", "type": "combo", "choices": ["Full", "20 MHz"], "default": "Full"},
-	{"name": "Samples",  "matlab_name": "recordLength", "matlab_cat": "averager","type": "int", "increment": 64, "snap": false, "low": 64, "high": 4096},
+	{"name": "Samples",  "matlab_name": "recordLength", "matlab_cat": "averager","type": "int", "increment": 64, "snap": false, "low": 64, "high": 4096, "default": 1024},
 	{"name": "Segments", "matlab_name": "nbrSegments", "matlab_cat": "averager", "type": "int", "increment": 2000, "snap": false, "low": 1, "high": 512000},
 	{"name": "Waveforms", "matlab_name": "nbrWaveforms", "matlab_cat": "averager", "type": "int", "increment": 1, "snap": false, "low": 1, "high": 1024},
 	{"name": "Round Robins", "matlab_name": "nbrRoundRobins", "matlab_cat": "averager", "type": "int", "increment": 1, "snap": false, "low": 1, "high": 1024},
