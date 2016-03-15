@@ -114,6 +114,10 @@ class NodeScene(QGraphicsScene):
 
                         node.add_parameter(pp)
 
+                    # Connector constraints
+                    if 'allowed_destinations' in the_data.keys():
+                        node.allowed_destinations = the_data['allowed_destinations']
+
                     # Custom coloring
                     if cat_name == "Inputs":
                         node.set_title_color(QColor(80,100,70))

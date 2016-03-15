@@ -21,6 +21,7 @@ class Node(QGraphicsRectItem):
 
         self.outputs = {}
         self.inputs = {}
+        self.allowed_destinations = {}
         self.parameters = {}
         self.parameter_order = {}
         self.collapsed = False
@@ -307,6 +308,12 @@ class Node(QGraphicsRectItem):
         # Lower case first char
         lcfc = lambda s: s[:1].lower() + s[1:] if s else ''
 
+        # Remove whitespace
+        rws = lambda s: s.replace(" ", "")
+
+        # Overall conversion
+        matlabize = lambda s: lcfc(rws(s))
+
         # Construct a dictionary for each category and place it in params
         cats = set([v.matlab_cat for v in params_with_cat])
         for cat in cats:
@@ -315,9 +322,9 @@ class Node(QGraphicsRectItem):
         # Add the parameters without a particular category
         for v in params_without_cat:
             if hasattr(v, 'matlab_name'):
-                params[lcfc(v.matlab_name)] = v.value()
+                params[matlabize(v.matlab_name)] = v.value()
             else:
-                params[lcfc(v.name)] = v.value()
+                params[matlabize(v.name)] = v.value()
 
         # Add the source name when needed
         if self.cat_name == "Filters":

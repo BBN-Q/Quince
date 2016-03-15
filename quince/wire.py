@@ -46,28 +46,38 @@ class Wire(QGraphicsPathItem):
     def decide_drop(self, event):
         self.setVisible(False)
         drop_site = self.scene().itemAt(event.scenePos(), QTransform())
+        success = True
+
         if isinstance(drop_site, Connector):
             if self.start_obj.parent.name in ["Sweep", "Parameter"]:
                 self.scene().window.set_status("Can't connect a sweep or parameter to a data connector.")
             elif drop_site.connector_type == 'input':
-                self.set_end(drop_site.scenePos())
-                self.end_obj = drop_site
-                drop_site.wires_in.append(self)
-                self.start_obj.wires_out.append(self)
+
+                # Check if there are restrictions on the allowed drop destinations, then act on them
+                if len(self.start_obj.parent.allowed_destinations) > 0 and self.start_obj.name in self.start_obj.parent.allowed_destinations.keys():
+                    success = drop_site.name == self.start_obj.parent.allowed_destinations[self.start_obj.name]
+                    if not success:
+                        self.scene().window.set_status("Can't connect {} connector to {}, only to {}.".format(self.start_obj.name, drop_site.name, self.start_obj.parent.allowed_destinations[self.start_obj.name]))
+
         elif isinstance(drop_site, Parameter):
             print(self.start_obj.name)
             if self.start_obj.parent.name in ["Sweep", "Parameter"]:
-                drop_site.wires_in.append(self)
-                self.start_obj.wires_out.append(self)
-                self.set_end(drop_site.scenePos())
-                self.end_obj = drop_site
-
+                
                 # Update the datatypes for sweep objects
                 if self.start_obj.parent.name == "Sweep":
-                    print("Attempting to update fields")
                     self.start_obj.parent.update_fields_from_connector()
             else:
                 self.scene().window.set_status("Can't connect data connector to parameter.")
+                success = False
+
+        else:
+            success = False
+
+        if success:
+            self.set_end(drop_site.scenePos())
+            self.end_obj = drop_site
+            self.end_obj.wires_in.append(self)
+            self.start_obj.wires_out.append(self)
 
         self.setVisible(True)
         self.scene().clear_wires(only_clear_orphaned=True)
