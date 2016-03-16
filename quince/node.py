@@ -355,12 +355,28 @@ class Node(QGraphicsRectItem):
         for v in params_without_cat:
             params[v.matlab_name] = v.value()
 
-        # Add the source name when needed
+        # Special modifications for filters, grab the source name and grab any relevant plotting/output params
         if self.cat_name == "Filters":
             for k, v in self.inputs.items():
                 for w in v.wires_in:
                     params['dataSource'] = w.start_obj.parent.label.toPlainText()
-            
+    
+            # These are the defaults
+            params['saveRecords'] = False
+            params['plotScope']   = False
+            params['saved']       = True
+            for k, v in self.outputs.items():
+                for w in v.wires_out:
+                    if w.end_obj.parent.name == "Plot Data":
+                        params['plotScope'] = True
+                        params['plotMode'] = w.end_obj.parent.parameters["Plot Mode"].value()
+                    elif w.end_obj.parent.name == "Output to HDF5":
+                        params['saveRecords'] = True
+                        params['recordsFilePath'] = w.end_obj.parent.parameters["Filename"].value()
+                    elif w.end_obj.parent.name == "Output to raw text":
+                        params['saveRecords'] = True
+                        params['recordsFilePath'] = w.end_obj.parent.parameters["Filename"].value()
+                                    
         params['deviceName'] = self.name
         return params
 
