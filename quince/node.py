@@ -322,9 +322,14 @@ class Node(QGraphicsRectItem):
             if not hasattr(v, 'matlab_name'):
                 v.matlab_name = matlabize(v.name)
 
-        # For the Alazar, push the channel information into a separate raw stream dict
-        # if self.name == "Alazar":
-
+        # For the Alazar Streams, pull the data from the main Alazar object
+        if self.name == "Stream Select Alazar":
+            for k, v in self.inputs.items():
+                for i, w in enumerate(v.wires_in):
+                    if i == 0:
+                        params["channel"] = w.start_obj.name[-1]
+                    else:
+                        print("The Alazar stream must be connected to a single Alazar node.")
 
         # For the X6, pull the stream information into the X6 dict
         if self.name == "X6":  
