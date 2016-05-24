@@ -142,7 +142,7 @@ class NodeScene(QGraphicsScene):
                 action.triggered.connect(func)
                 self.sub_menus[cat].addAction(action)
 
-        node_files = sorted(glob.glob('nodes/*/*.json'))
+        node_files = sorted(glob.glob('pycontrol-nodes/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
         
         for cat in categories:
