@@ -40,7 +40,7 @@ for mod_name, mod in modules.items():
 		
 		# Start a dictionary for JSON output
 		j = {}
-		j["name"] = mod_name
+		j["name"] =  n
 		j["outputs"] = f._output_connectors
 		j["inputs"] = f._input_connectors
 		j["parameters"] = []
