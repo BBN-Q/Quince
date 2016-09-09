@@ -398,7 +398,7 @@ class TitleText(QGraphicsTextItem):
             if text in node_names:
                 self.scene().window.set_status("Node name already exists")
             else:
-                self.scene().inspector_change_name(self._value, text)
+                # self.scene().inspector_change_name(self._value, text)
                 self._value = text
             self.textChanged.emit(self.toPlainText())
         else:

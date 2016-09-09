@@ -10,8 +10,10 @@ from PyQt5.QtSvg import *
 from PyQt5.QtWidgets import *
 
 from functools import partial
+from JSONLibraryUtils.FileWatcher import LibraryFileWatcher
 import json
 import glob
+import time
 import os.path
 
 from .node import *
@@ -142,7 +144,8 @@ class NodeScene(QGraphicsScene):
                 action.triggered.connect(func)
                 self.sub_menus[cat].addAction(action)
 
-        node_files = sorted(glob.glob('pycontrol-nodes/*/*.json'))
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pycontrol-nodes")
+        node_files = sorted(glob.glob(path+'/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
         
         for cat in categories:
@@ -151,6 +154,13 @@ class NodeScene(QGraphicsScene):
 
         for nf in node_files:
             parse_node_file(nf)
+
+    def load_pyqlab(self):
+        time.sleep(1.0)
+        self.window.set_status("Example: {}".format(self.window.measFile))
+
+    def reload_pyqlab(self):
+        pass
 
     def load(self, filename):
         with open(filename, 'r') as df:
@@ -267,54 +277,54 @@ class NodeScene(QGraphicsScene):
             self.window.set_status("Could not create a node of the requested type.")
             return None
 
-    def inspector_change_name(self, before, after):
-        matches = self.window.sweep_view.model.findItems(before)
-        if len(matches) != 1:
-            pass
-        else:
-            matches[0].setText(after)
+    # def inspector_change_name(self, before, after):
+    #     matches = self.window.sweep_view.model.findItems(before)
+    #     if len(matches) != 1:
+    #         pass
+    #     else:
+    #         matches[0].setText(after)
 
-    def update_inspector_lists(self):
-        sweeps = [i for i in self.items() if isinstance(i, Node) and i.name == 'Sweep']
-        params = [i for i in self.items() if isinstance(i, Node) and i.name == 'Parameter']
+    # def update_inspector_lists(self):
+    #     sweeps = [i for i in self.items() if isinstance(i, Node) and i.name == 'Sweep']
+    #     params = [i for i in self.items() if isinstance(i, Node) and i.name == 'Parameter']
         
-        # Insert any new sweeps/params
-        for p in params:
-            matches = self.window.param_view.model.findItems(p.label.toPlainText())
-            if len(matches) == 0:
-                item = QStandardItem(p.label.toPlainText())
-                item.setCheckable(True)
-                item.setDropEnabled(False)
-                item.setEditable(False)
-                self.window.param_view.model.appendRow(item)
-        for s in sweeps:
-            matches = self.window.sweep_view.model.findItems(s.label.toPlainText())
-            if len(matches) == 0:
-                item = QStandardItem(s.label.toPlainText())
-                item.setCheckable(True)
-                item.setDropEnabled(False)
-                item.setEditable(False)
-                self.window.sweep_view.model.appendRow(item)
+    #     # Insert any new sweeps/params
+    #     for p in params:
+    #         matches = self.window.param_view.model.findItems(p.label.toPlainText())
+    #         if len(matches) == 0:
+    #             item = QStandardItem(p.label.toPlainText())
+    #             item.setCheckable(True)
+    #             item.setDropEnabled(False)
+    #             item.setEditable(False)
+    #             self.window.param_view.model.appendRow(item)
+    #     for s in sweeps:
+    #         matches = self.window.sweep_view.model.findItems(s.label.toPlainText())
+    #         if len(matches) == 0:
+    #             item = QStandardItem(s.label.toPlainText())
+    #             item.setCheckable(True)
+    #             item.setDropEnabled(False)
+    #             item.setEditable(False)
+    #             self.window.sweep_view.model.appendRow(item)
 
-        # Remove any old sweeps/params
-        sweep_names = [s.label.toPlainText() for s in sweeps]
-        param_names = [p.label.toPlainText() for p in params]
+    #     # Remove any old sweeps/params
+    #     sweep_names = [s.label.toPlainText() for s in sweeps]
+    #     param_names = [p.label.toPlainText() for p in params]
 
-        for i in range(self.window.param_view.model.rowCount()):
-            if self.window.param_view.model.index(i,0).data() not in param_names:
-                self.window.param_view.model.removeRows(i,1)
-        for i in range(self.window.sweep_view.model.rowCount()):
-            if self.window.sweep_view.model.index(i,0).data() not in sweep_names:
-                self.window.sweep_view.model.removeRows(i,1)
+    #     for i in range(self.window.param_view.model.rowCount()):
+    #         if self.window.param_view.model.index(i,0).data() not in param_names:
+    #             self.window.param_view.model.removeRows(i,1)
+    #     for i in range(self.window.sweep_view.model.rowCount()):
+    #         if self.window.sweep_view.model.index(i,0).data() not in sweep_names:
+    #             self.window.sweep_view.model.removeRows(i,1)
 
     def removeItem(self, item):
         super(NodeScene, self).removeItem(item)
-        self.update_inspector_lists()
+        # self.update_inspector_lists()
 
     def addItem(self, item):
         super(NodeScene, self).addItem(item)
-        if isinstance(item, Node):
-            self.update_inspector_lists()
+        # if isinstance(item, Node):
+            # self.update_inspector_lists()
 
 class NodeView(QGraphicsView):
     """docstring for NodeView"""
@@ -427,26 +437,26 @@ class NodeWindow(QMainWindow):
         self.hbox.addWidget(self.view)
         self.hbox.setContentsMargins(0,0,0,0)
 
-        # Setup inspector
-        self.tab_widget = QTabWidget(self)
-        self.tab_params = QWidget()
-        self.tab_sweeps = QWidget()
-        self.tab_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-        self.tab_widget.addTab(self.tab_sweeps, "Sweeps")
-        self.tab_widget.addTab(self.tab_params, "Parameters")
-        self.hbox.addWidget(self.tab_widget)
+        # # Setup inspector
+        # self.tab_widget = QTabWidget(self)
+        # self.tab_params = QWidget()
+        # self.tab_sweeps = QWidget()
+        # self.tab_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        # self.tab_widget.addTab(self.tab_sweeps, "Sweeps")
+        # self.tab_widget.addTab(self.tab_params, "Parameters")
+        # self.hbox.addWidget(self.tab_widget)
 
         # Create list views
-        self.sweep_view = NodeListView(self.tab_widget)
-        self.param_view = NodeListView(self.tab_widget)
+        # self.sweep_view = NodeListView(self.tab_widget)
+        # self.param_view = NodeListView(self.tab_widget)
         # self.list_view_sweeps.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.list_view_params.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.sweep_view)
-        self.tab_sweeps.setLayout(vbox)
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.param_view)
-        self.tab_params.setLayout(vbox)
+        # vbox = QVBoxLayout()
+        # vbox.addWidget(self.sweep_view)
+        # self.tab_sweeps.setLayout(vbox)
+        # vbox = QVBoxLayout()
+        # vbox.addWidget(self.param_view)
+        # self.tab_params.setLayout(vbox)
 
         # Setup models
         # self.model_params = QStandardItemModel(self.list_view_params)
@@ -462,7 +472,8 @@ class NodeWindow(QMainWindow):
             ps = self.scene.create_PipelineStart()
             ps.setPos(-300,0)
 
-        svgrend =  QSvgRenderer("assets/quince.svg")
+        svg_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets/quince.svg")
+        svgrend = QSvgRenderer(svg_path)
         self.svgitem = QGraphicsSvgItem()
         self.svgitem.setSharedRenderer(svgrend)
         self.scene.addItem(self.svgitem)
@@ -489,6 +500,27 @@ class NodeWindow(QMainWindow):
         else:  
             self.timer.stop()
             self.scene.removeItem(self.svgitem)
+
+    def load_pyqlab(self, measFile=None, sweepFile=None, instrFile=None):
+        if None in [measFile, sweepFile, instrFile]:
+            self.set_status("Did not receive all relevant files from PyQLab.")
+            return
+
+        self.set_status("Loading PyQLab configuration files...")
+        
+        self.measFile  = measFile
+        self.sweepFile = sweepFile
+        self.instrFile = instrFile
+        
+        # Establish File Watchers for these config files:
+        self.watchers = [LibraryFileWatcher(fn, self.update_pyqlab) for fn in [measFile, sweepFile, instrFile]] 
+
+        # Pass the files to the scene
+        self.scene.load_pyqlab()
+
+    def update_pyqlab(self):
+        self.set_status("Files changed on disk, reloading.")
+        self.scene.reload_pyqlab()
 
     def load(self):
         settings = QSettings("BBN", "Quince")
