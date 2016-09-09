@@ -15,6 +15,7 @@ import json
 import glob
 import time
 import os.path
+import numpy as np
 
 from .node import *
 from .wire import *
@@ -22,6 +23,35 @@ from .param import *
 from .graph import *
 from .util import *
 from .inspect import *
+
+# Convert from camelCase to pep8 compliant labels
+# http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+all_cap_re = re.compile('([a-z0-9])([A-Z])')
+def snakeify(name):
+    s1 = first_cap_re.sub(r'\1_\2', name)
+    return all_cap_re.sub(r'\1_\2', s1).lower()
+
+# Recursively re-label dictionary
+def rec_snakeify(dictionary):
+    new = {}
+    for k, v in dictionary.items():
+        if isinstance(v, dict):
+            v = rec_snakeify(v)
+        new[snakeify(k)] = v
+    return new
+
+def strip_vendor_names(instr_name):
+    vns = ["Agilent", "Alazar", "Keysight", "Holzworth", "Yoko", "Yokogawa"]
+    for vn in vns:
+        instr_name = instr_name.replace(vn, "")
+    return instr_name
+
+def correct_resource_name(resource_name):
+    substs = {"USB::": "USB0::", }
+    for k, v in substs.items():
+        resource_name = resource_name.replace(k, v)
+    return resource_name
 
 class NodeScene(QGraphicsScene):
     """docstring for NodeScene"""
@@ -156,11 +186,65 @@ class NodeScene(QGraphicsScene):
             parse_node_file(nf)
 
     def load_pyqlab(self):
-        time.sleep(1.0)
-        self.window.set_status("Example: {}".format(self.window.measFile))
+
+        name_changes = {'KernelIntegration': 'KernelIntegrator',
+                        'DigitalDemod': 'Channelizer' }
+
+        with open(self.window.measFile, 'r') as FID:
+            meas_settings = rec_snakeify(json.load(FID)["filterDict"])
+
+        with open(self.window.instrFile, 'r') as FID:
+            instr_settings = rec_snakeify(json.load(FID)["instrDict"])
+
+        with open(self.window.sweepFile, 'r') as FID:
+            sweep_settings = rec_snakeify(json.load(FID)["sweepDict"])
+
+        new_nodes = {} # Keep track of nodes we create
+
+        # Create and place the filters
+        for meas_par in meas_settings.values():
+            meas_name = meas_par["label"]
+            meas_type = meas_par["x__class__"]
+            # Perform some translation
+            if meas_type in name_changes.keys():
+                meas_type = name_changes[meas_type]
+            # See if the filter exists, and then create it
+            if hasattr(self, 'create_'+meas_type):
+                new_node = getattr(self, 'create_'+meas_type)()
+                new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+                new_node.label.setPlainText(meas_name)
+                new_nodes[meas_name] = new_node
+
+        for meas_name_camelcase, meas in new_nodes.items():
+            meas_name = meas_settings[snakeify(meas_name_camelcase)]["label"]
+            # Do we have the desination node?
+            if meas_settings[snakeify(meas_name_camelcase)]["data_source"] in new_nodes.keys():
+                # We need more control for which connector
+                # For now default to sink
+                start_node = new_nodes[meas_settings[snakeify(meas_name_camelcase)]["data_source"]]
+                if 'source' in start_node.outputs.keys():
+                    if 'sink' in meas.inputs.keys():
+                        # Create wire and register with scene
+                        new_wire = Wire(start_node.outputs['source'])
+                        self.addItem(new_wire)
+                        
+                        # Add to start node
+                        new_wire.set_start(start_node.outputs['source'].scenePos())
+                        start_node.outputs['source'].wires_out.append(new_wire)
+                        
+                        # Add to end node
+                        new_wire.end_obj = meas.inputs['sink']
+                        new_wire.set_end(meas.inputs['sink'].scenePos())
+                        meas.inputs['sink'].wires_in.append(new_wire)
+                    else:
+                        print("Could not find sink connector in",meas_name)
+                else:
+                    print("Could not find source connector in",start_node)
+            else:
+                print("Could not find", meas_settings[snakeify(meas_name_camelcase)]["data_source"])
 
     def reload_pyqlab(self):
-        pass
+        self.load_pyqlab()
 
     def load(self, filename):
         with open(filename, 'r') as df:
