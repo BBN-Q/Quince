@@ -43,6 +43,9 @@ class Node(QGraphicsRectItem):
         self.label = TitleText(self.name, parent=self)
         self.label.setDefaultTextColor(Qt.white)
 
+        # Save the position to qsettings
+        self.settings = QSettings("BBN", "Quince")
+
         if self.label.boundingRect().topRight().x() > 80:
             self.min_width = self.label.boundingRect().topRight().x()+20
             self.setRect(0,0,self.label.boundingRect().topRight().x()+20,30)
@@ -220,6 +223,7 @@ class Node(QGraphicsRectItem):
             for k, v in self.parameters.items():
                 for w in v.wires_in:
                     w.set_end(v.pos()+value)
+            self.settings.setValue("node_positions/" + self.label.toPlainText() + "_pos", self.pos())
         return QGraphicsRectItem.itemChange(self, change, value)
 
     def itemResize(self, delta):
