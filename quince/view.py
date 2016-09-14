@@ -191,18 +191,20 @@ class NodeScene(QGraphicsScene):
                         'DigitalDemod': 'Channelizer' }
 
         with open(self.window.measFile, 'r') as FID:
-            meas_settings = rec_snakeify(json.load(FID)["filterDict"])
+            self.meas_settings = rec_snakeify(json.load(FID)["filterDict"])
 
         with open(self.window.instrFile, 'r') as FID:
-            instr_settings = rec_snakeify(json.load(FID)["instrDict"])
+            self.instr_settings = rec_snakeify(json.load(FID)["instrDict"])
 
         with open(self.window.sweepFile, 'r') as FID:
-            sweep_settings = rec_snakeify(json.load(FID)["sweepDict"])
+            self.sweep_settings = rec_snakeify(json.load(FID)["sweepDict"])
 
-        new_nodes = {} # Keep track of nodes we create
+        self.loaded_nodes = {} # Keep track of nodes we create
+
+        settings = QSettings("BBN", "Quince")
 
         # Create and place the filters
-        for meas_par in meas_settings.values():
+        for meas_par in self.meas_settings.values():
             meas_name = meas_par["label"]
             meas_type = meas_par["x__class__"]
             # Perform some translation
@@ -210,18 +212,24 @@ class NodeScene(QGraphicsScene):
                 meas_type = name_changes[meas_type]
             # See if the filter exists, and then create it
             if hasattr(self, 'create_'+meas_type):
-                new_node = getattr(self, 'create_'+meas_type)()
-                new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                new_node.label.setPlainText(meas_name)
-                new_nodes[meas_name] = new_node
+                
 
-        for meas_name_camelcase, meas in new_nodes.items():
-            meas_name = meas_settings[snakeify(meas_name_camelcase)]["label"]
+                new_node = getattr(self, 'create_'+meas_type)()
+                stored_loc = settings.value("node_positions/" + meas_name + "_pos")
+                if stored_loc is not None:
+                    new_node.setPos(stored_loc)
+                else:
+                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+                new_node.label.setPlainText(meas_name)
+                self.loaded_nodes[meas_name] = new_node
+
+        for meas_name_camelcase, meas in self.loaded_nodes.items():
+            meas_name = self.meas_settings[snakeify(meas_name_camelcase)]["label"]
             # Do we have the desination node?
-            if meas_settings[snakeify(meas_name_camelcase)]["data_source"] in new_nodes.keys():
+            if self.meas_settings[snakeify(meas_name_camelcase)]["data_source"] in self.loaded_nodes.keys():
                 # We need more control for which connector
                 # For now default to sink
-                start_node = new_nodes[meas_settings[snakeify(meas_name_camelcase)]["data_source"]]
+                start_node = self.loaded_nodes[self.meas_settings[snakeify(meas_name_camelcase)]["data_source"]]
                 if 'source' in start_node.outputs.keys():
                     if 'sink' in meas.inputs.keys():
                         # Create wire and register with scene
@@ -241,9 +249,16 @@ class NodeScene(QGraphicsScene):
                 else:
                     print("Could not find source connector in",start_node)
             else:
-                print("Could not find", meas_settings[snakeify(meas_name_camelcase)]["data_source"])
+                print("Could not find", self.meas_settings[snakeify(meas_name_camelcase)]["data_source"])
 
     def reload_pyqlab(self):
+        # Clear scene
+        nodes = [i for i in self.items() if isinstance(i, Node)]
+        wires = [i for i in self.items() if isinstance(i, Wire)]
+        for o in nodes+wires:
+            self.removeItem(o)
+        # print(self.items())
+        time.sleep(1)
         self.load_pyqlab()
 
     def load(self, filename):
@@ -596,11 +611,24 @@ class NodeWindow(QMainWindow):
         self.sweepFile = sweepFile
         self.instrFile = instrFile
         
-        # Establish File Watchers for these config files:
-        self.watchers = [LibraryFileWatcher(fn, self.update_pyqlab) for fn in [measFile, sweepFile, instrFile]] 
+        # Delay timer to avoid multiple firings
+        self.update_timer = QTimer(self)
+        self.update_timer.setSingleShot(True)
+        self.update_timer.setInterval(500)
+        self.update_timer.timeout.connect(self.update_pyqlab)
 
-        # Pass the files to the scene
-        self.scene.load_pyqlab()
+        # Establish File Watchers for these config files:
+        self.watcher = QFileSystemWatcher()
+        for f in [measFile, sweepFile, instrFile]:
+            self.watcher.addPath(f)
+        self.watcher.fileChanged.connect(self.pyqlab_needs_update)
+
+        self.update_timer.start()
+
+    def pyqlab_needs_update(self, path):
+        if not self.update_timer.isActive():
+            print("Starting timer...")
+            self.update_timer.start()
 
     def update_pyqlab(self):
         self.set_status("Files changed on disk, reloading.")
