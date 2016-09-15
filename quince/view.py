@@ -251,6 +251,7 @@ class NodeScene(QGraphicsScene):
             # See if the filter exists, and then create it
             if hasattr(self, 'create_'+meas_type):
                 new_node = getattr(self, 'create_'+meas_type)()
+                new_node.enabled = meas_par['enabled']
                 new_node.base_params = meas_par
                 new_node.setOpacity(0.0)
                 stored_loc = settings.value("node_positions/" + meas_name + "_pos")
@@ -587,6 +588,11 @@ class NodeWindow(QMainWindow):
         collapseAllAction.setStatusTip('Collapse All')
         collapseAllAction.triggered.connect(self.collapse_all)
 
+        toggleEnabledAction = QAction('&Toggle Descendants', self)        
+        toggleEnabledAction.setShortcut('Ctrl+E')
+        toggleEnabledAction.setStatusTip('Toggle the Enabled/Disabled status of all descendant nodes.')
+        toggleEnabledAction.triggered.connect(self.toggle_enable_descendants)
+
         duplicateAction = QAction('&Duplicate', self)        
         duplicateAction.setShortcut('Ctrl+D')
         duplicateAction.setStatusTip('Duplicate')
@@ -602,6 +608,7 @@ class NodeWindow(QMainWindow):
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
         editMenu.addAction(collapseAllAction)
+        editMenu.addAction(toggleEnabledAction)
         editMenu.addAction(duplicateAction)
 
         # Setup layout
@@ -666,6 +673,7 @@ class NodeWindow(QMainWindow):
         self.update_timer.timeout.connect(self.update_pyqlab)
 
         # Delay timer to avoid multiple firings
+        self.ignore_file_updates = False
         self.ignore_timer = QTimer(self)
         self.ignore_timer.setSingleShot(True)
         self.ignore_timer.setInterval(1500)
@@ -736,6 +744,27 @@ class NodeWindow(QMainWindow):
 
         for i in items:
             nodes_by_label[i].setSelected(True)
+
+    def toggle_enable_descendants(self):
+        selected_nodes = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
+        
+        if len(selected_nodes) == 0:
+            self.set_status("No nodes selected.")
+            return
+        wires = [i for i in self.scene.items() if isinstance(i, Wire)]
+        nodes_by_label = {i.label.toPlainText(): i for i in self.scene.items() if isinstance(i, Node)}
+        graph = generate_graph(wires, dag=True)
+
+        items = []
+        items.extend(selected_nodes)
+        for sn in selected_nodes:
+            descs = descendants(graph, sn)
+            items.extend(descs)
+
+        new_status = not nodes_by_label[selected_nodes[0]].enabled
+
+        for i in items:
+            nodes_by_label[i].enabled = new_status
 
     def collapse_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]

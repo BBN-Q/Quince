@@ -79,6 +79,20 @@ class Node(QGraphicsRectItem):
         # Synchronizing parameters
         self.changing = False
    
+    @property
+    def enabled(self):
+        return self._enabled
+    @enabled.setter
+    def enabled(self, value):
+        self._enabled = value
+        if value:
+            self.bg_color = QColor(240,240,240)
+            self.title_color = QColor(80,80,100)
+        else:
+            self.bg_color = QColor(140,140,140)
+            self.title_color = QColor(100,100,100)
+        self.update()
+
     def update_min_width(self):
         widths = [p.width() for p in self.parameters.values()]
         widths.extend([o.width() for o in self.outputs.values()])
@@ -309,6 +323,7 @@ class Node(QGraphicsRectItem):
         else:
             dict_repr['data_source'] = ""
         dict_repr.update(self.base_params)
+        dict_repr['enabled'] = self.enabled
         return dict_repr
 
 class TitleText(QGraphicsTextItem):

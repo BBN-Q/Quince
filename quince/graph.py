@@ -6,9 +6,12 @@
 
 import networkx as nx
 
-def generate_graph(wires):
+def generate_graph(wires, dag=False):
 	edges = [(w.start_obj.parent.label.toPlainText(), w.end_obj.parent.label.toPlainText()) for w in wires]
-	graph = nx.Graph()
+	if dag:
+		graph = nx.DiGraph()
+	else:
+		graph = nx.Graph()
 	graph.add_edges_from(edges)
 	return graph
 
@@ -18,3 +21,6 @@ def items_on_subgraph(graph, node):
 		if node in sg.nodes():
 			return sg
 	return []
+
+def descendants(graph, node):
+	return nx.descendants(graph, node)
