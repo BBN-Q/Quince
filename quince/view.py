@@ -41,6 +41,26 @@ def rec_snakeify(dictionary):
         new[snakeify(k)] = v
     return new
 
+# Convert from pep8 back to camelCase labels
+# http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
+def camelize(word):
+    if 'x__' in word:
+        return word
+    elif 'i_ffreq' in word:
+        return "IFfreq"
+    else:
+        word = ''.join(x.capitalize() or '_' for x in word.split('_'))
+        return word[0].lower() + word[1:]
+
+# Recursively re-label dictionary
+def rec_camelize(dictionary):
+    new = {}
+    for k, v in dictionary.items():
+        if isinstance(v, dict):
+            v = rec_camelize(v)
+        new[camelize(k)] = v
+    return new
+
 def strip_vendor_names(instr_name):
     vns = ["Agilent", "Alazar", "Keysight", "Holzworth", "Yoko", "Yokogawa"]
     for vn in vns:
@@ -177,9 +197,24 @@ class NodeScene(QGraphicsScene):
         path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pycontrol-nodes")
         node_files = sorted(glob.glob(path+'/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
-        
+
         for cat in categories:
             sm = self.menu.addMenu(cat)
+            self.sub_menus[cat] = sm
+
+        for nf in node_files:
+            parse_node_file(nf)
+
+        # Now add the instruments
+        self.instruments_menu = self.menu.addMenu("instruments")
+        self.sub_menus["instruments"] = self.instruments_menu
+
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pycontrol-nodes/instruments")
+        node_files = sorted(glob.glob(path+'/*/*.json'))
+        categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
+
+        for cat in categories:
+            sm = self.instruments_menu.addMenu(cat)
             self.sub_menus[cat] = sm
 
         for nf in node_files:
@@ -188,7 +223,8 @@ class NodeScene(QGraphicsScene):
     def load_pyqlab(self):
 
         name_changes = {'KernelIntegration': 'KernelIntegrator',
-                        'DigitalDemod': 'Channelizer' }
+                        'DigitalDemod': 'Channelizer',
+                        'AlazarATS9870': 'ATS9870'}
 
         with open(self.window.measFile, 'r') as FID:
             self.meas_settings = rec_snakeify(json.load(FID)["filterDict"])
@@ -199,12 +235,14 @@ class NodeScene(QGraphicsScene):
         with open(self.window.sweepFile, 'r') as FID:
             self.sweep_settings = rec_snakeify(json.load(FID)["sweepDict"])
 
-        self.loaded_nodes = {} # Keep track of nodes we create
+        self.loaded_measure_nodes = {} # Keep track of nodes we create
+        self.loaded_instr_nodes = {} # Keep track of nodes we create
 
         settings = QSettings("BBN", "Quince")
 
         # Create and place the filters
         for meas_par in self.meas_settings.values():
+
             meas_name = meas_par["label"]
             meas_type = meas_par["x__class__"]
             # Perform some translation
@@ -212,28 +250,50 @@ class NodeScene(QGraphicsScene):
                 meas_type = name_changes[meas_type]
             # See if the filter exists, and then create it
             if hasattr(self, 'create_'+meas_type):
-                
-
                 new_node = getattr(self, 'create_'+meas_type)()
+                new_node.base_params = meas_par
+                new_node.setOpacity(0.0)
                 stored_loc = settings.value("node_positions/" + meas_name + "_pos")
                 if stored_loc is not None:
                     new_node.setPos(stored_loc)
                 else:
                     new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
                 new_node.label.setPlainText(meas_name)
-                self.loaded_nodes[meas_name] = new_node
+                self.loaded_measure_nodes[meas_name] = new_node
 
-        for meas_name_camelcase, meas in self.loaded_nodes.items():
-            meas_name = self.meas_settings[snakeify(meas_name_camelcase)]["label"]
+        # Create and place the instruments
+        for instr_par in self.instr_settings.values():
+            instr_name = instr_par["label"]
+            instr_type = instr_par["x__class__"]
+            # Perform some translation
+            if instr_type in name_changes.keys():
+                instr_type = name_changes[instr_type]
+            # See if the filter exists, and then create it
+            if hasattr(self, 'create_'+instr_type):
+                
+                new_node = getattr(self, 'create_'+instr_type)()
+                new_node.base_params = instr_par
+                new_node.setOpacity(0.0)
+                stored_loc = settings.value("node_positions/" + instr_name + "_pos")
+                if stored_loc is not None:
+                    new_node.setPos(stored_loc)
+                else:
+                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+                new_node.label.setPlainText(instr_name)
+                self.loaded_instr_nodes[instr_name] = new_node
+
+        for name_camelcase, node in self.loaded_measure_nodes.items():
+            meas_name = self.meas_settings[snakeify(name_camelcase)]["label"]
             # Do we have the desination node?
-            if self.meas_settings[snakeify(meas_name_camelcase)]["data_source"] in self.loaded_nodes.keys():
+            if self.meas_settings[snakeify(name_camelcase)]["data_source"] in self.loaded_measure_nodes.keys():
                 # We need more control for which connector
                 # For now default to sink
-                start_node = self.loaded_nodes[self.meas_settings[snakeify(meas_name_camelcase)]["data_source"]]
+                start_node = self.loaded_measure_nodes[self.meas_settings[snakeify(name_camelcase)]["data_source"]]
                 if 'source' in start_node.outputs.keys():
-                    if 'sink' in meas.inputs.keys():
+                    if 'sink' in node.inputs.keys():
                         # Create wire and register with scene
                         new_wire = Wire(start_node.outputs['source'])
+                        new_wire.setOpacity(0.0)
                         self.addItem(new_wire)
                         
                         # Add to start node
@@ -241,15 +301,57 @@ class NodeScene(QGraphicsScene):
                         start_node.outputs['source'].wires_out.append(new_wire)
                         
                         # Add to end node
-                        new_wire.end_obj = meas.inputs['sink']
-                        new_wire.set_end(meas.inputs['sink'].scenePos())
-                        meas.inputs['sink'].wires_in.append(new_wire)
+                        new_wire.end_obj = node.inputs['sink']
+                        new_wire.set_end(node.inputs['sink'].scenePos())
+                        node.inputs['sink'].wires_in.append(new_wire)
                     else:
                         print("Could not find sink connector in",meas_name)
                 else:
                     print("Could not find source connector in",start_node)
+            elif self.meas_settings[snakeify(name_camelcase)]["data_source"] in self.loaded_instr_nodes.keys():
+                start_node = self.loaded_instr_nodes[self.meas_settings[snakeify(name_camelcase)]["data_source"]]
+                if 'source' in start_node.outputs.keys():
+                    if 'sink' in node.inputs.keys():
+                        # Create wire and register with scene
+                        new_wire = Wire(start_node.outputs['source'])
+                        new_wire.setOpacity(0.0)
+                        self.addItem(new_wire)
+                        
+                        # Add to start node
+                        new_wire.set_start(start_node.outputs['source'].scenePos())
+                        start_node.outputs['source'].wires_out.append(new_wire)
+                        
+                        # Add to end node
+                        new_wire.end_obj = node.inputs['sink']
+                        new_wire.set_end(node.inputs['sink'].scenePos())
+                        node.inputs['sink'].wires_in.append(new_wire)
+                    else:
+                        print("Could not find sink connector in",meas_name)
             else:
-                print("Could not find", self.meas_settings[snakeify(meas_name_camelcase)]["data_source"])
+                print("Could not find data_source")
+
+            self.fade_in_items()
+
+    def fade_in_items(self):
+        self.draw_i = 0
+        self.increment = 15
+        self.duration = 300
+
+        self.fade_timer = QTimer()
+        self.fade_timer.timeout.connect(self.advance)
+        self.fade_timer.start(self.increment)
+
+    def advance(self):
+        if self.draw_i < self.duration:
+            for i in self.items():
+                if isinstance(i, Node) or isinstance(i, Wire):
+                    i.setOpacity(float(self.draw_i)/self.duration)
+            self.draw_i += self.increment
+        else:  
+            for i in self.items():
+                if isinstance(i, Node) or isinstance(i, Wire):
+                    i.setOpacity(1.0)
+            self.fade_timer.stop()
 
     def reload_pyqlab(self):
         # Clear scene
@@ -257,8 +359,6 @@ class NodeScene(QGraphicsScene):
         wires = [i for i in self.items() if isinstance(i, Wire)]
         for o in nodes+wires:
             self.removeItem(o)
-        # print(self.items())
-        time.sleep(1)
         self.load_pyqlab()
 
     def load(self, filename):
@@ -344,15 +444,26 @@ class NodeScene(QGraphicsScene):
             nodes  = [i for i in self.items() if isinstance(i, Node)]
             wires  = [i for i in self.items() if isinstance(i, Wire)]
             
-            rowCount = self.window.sweep_view.model.rowCount()
-            sweeps = [self.window.sweep_view.model.item(i) for i in range(rowCount)]
-            sweep_dict = [{'number': i, 'name': s.text(), 'enabled': s.checkState()} for i,s in enumerate(sweeps)]
-
             data = {}
             data['nodes']  = [n.dict_repr() for n in nodes]
             data['wires']  = [n.dict_repr() for n in wires]
-            data['sweeps'] = sweep_dict
+            # data['sweeps'] = sweep_dict
             json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
+
+    def save_for_pyqlab(self):
+        if not hasattr(self, 'meas_settings'):
+            self.window.set_status("Not launched from PyQLab, and therefore cannot save to PyQLab JSON.")
+        else:
+            with open(self.window.measFile, 'w') as df:
+                nodes  = [i for i in self.items() if isinstance(i, Node)]
+                
+                data = {}
+                data["filterDict"]  = {n.label.toPlainText(): rec_camelize(n.dict_repr()) for n in nodes if n.base_params['x__module__'] == 'MeasFilters'}
+                data["version"]     = 1
+                data["x__class__"]  = "MeasFilterLibrary"
+                data["x__module__"] = "MeasFilters"
+
+                json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
     def export(self, filename):
         with open(filename, 'w') as df:
@@ -375,46 +486,6 @@ class NodeScene(QGraphicsScene):
         else:
             self.window.set_status("Could not create a node of the requested type.")
             return None
-
-    # def inspector_change_name(self, before, after):
-    #     matches = self.window.sweep_view.model.findItems(before)
-    #     if len(matches) != 1:
-    #         pass
-    #     else:
-    #         matches[0].setText(after)
-
-    # def update_inspector_lists(self):
-    #     sweeps = [i for i in self.items() if isinstance(i, Node) and i.name == 'Sweep']
-    #     params = [i for i in self.items() if isinstance(i, Node) and i.name == 'Parameter']
-        
-    #     # Insert any new sweeps/params
-    #     for p in params:
-    #         matches = self.window.param_view.model.findItems(p.label.toPlainText())
-    #         if len(matches) == 0:
-    #             item = QStandardItem(p.label.toPlainText())
-    #             item.setCheckable(True)
-    #             item.setDropEnabled(False)
-    #             item.setEditable(False)
-    #             self.window.param_view.model.appendRow(item)
-    #     for s in sweeps:
-    #         matches = self.window.sweep_view.model.findItems(s.label.toPlainText())
-    #         if len(matches) == 0:
-    #             item = QStandardItem(s.label.toPlainText())
-    #             item.setCheckable(True)
-    #             item.setDropEnabled(False)
-    #             item.setEditable(False)
-    #             self.window.sweep_view.model.appendRow(item)
-
-    #     # Remove any old sweeps/params
-    #     sweep_names = [s.label.toPlainText() for s in sweeps]
-    #     param_names = [p.label.toPlainText() for p in params]
-
-    #     for i in range(self.window.param_view.model.rowCount()):
-    #         if self.window.param_view.model.index(i,0).data() not in param_names:
-    #             self.window.param_view.model.removeRows(i,1)
-    #     for i in range(self.window.sweep_view.model.rowCount()):
-    #         if self.window.sweep_view.model.index(i,0).data() not in sweep_names:
-    #             self.window.sweep_view.model.removeRows(i,1)
 
     def removeItem(self, item):
         super(NodeScene, self).removeItem(item)
@@ -536,31 +607,6 @@ class NodeWindow(QMainWindow):
         self.hbox.addWidget(self.view)
         self.hbox.setContentsMargins(0,0,0,0)
 
-        # # Setup inspector
-        # self.tab_widget = QTabWidget(self)
-        # self.tab_params = QWidget()
-        # self.tab_sweeps = QWidget()
-        # self.tab_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-        # self.tab_widget.addTab(self.tab_sweeps, "Sweeps")
-        # self.tab_widget.addTab(self.tab_params, "Parameters")
-        # self.hbox.addWidget(self.tab_widget)
-
-        # Create list views
-        # self.sweep_view = NodeListView(self.tab_widget)
-        # self.param_view = NodeListView(self.tab_widget)
-        # self.list_view_sweeps.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.list_view_params.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # vbox = QVBoxLayout()
-        # vbox.addWidget(self.sweep_view)
-        # self.tab_sweeps.setLayout(vbox)
-        # vbox = QVBoxLayout()
-        # vbox.addWidget(self.param_view)
-        # self.tab_params.setLayout(vbox)
-
-        # Setup models
-        # self.model_params = QStandardItemModel(self.list_view_params)
-        # self.model_sweeps = QStandardItemModel(self.list_view_sweeps)
-
         self.main_widget = QWidget()
         self.main_widget.setLayout(self.hbox)
 
@@ -614,7 +660,7 @@ class NodeWindow(QMainWindow):
         # Delay timer to avoid multiple firings
         self.update_timer = QTimer(self)
         self.update_timer.setSingleShot(True)
-        self.update_timer.setInterval(500)
+        self.update_timer.setInterval(100)
         self.update_timer.timeout.connect(self.update_pyqlab)
 
         # Establish File Watchers for these config files:
@@ -627,7 +673,6 @@ class NodeWindow(QMainWindow):
 
     def pyqlab_needs_update(self, path):
         if not self.update_timer.isActive():
-            print("Starting timer...")
             self.update_timer.start()
 
     def update_pyqlab(self):
@@ -648,16 +693,8 @@ class NodeWindow(QMainWindow):
 
     def save(self):
         settings = QSettings("BBN", "Quince")
-        # Load the last_dir setting if it exists, otherwise use the path to this file
-        path = settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
-
-        fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
-        if fn[0] != '':
-            self.scene.save(fn[0])
-
-            # Push this directory to qsettings
-            settings.setValue("last_dir", QVariant(fn[0]))
-
+        self.scene.save_for_pyqlab()
+        
     def export(self):
         settings = QSettings("BBN", "Quince")
         # Load the last_export_dir setting if it exists, otherwise use the path to this file

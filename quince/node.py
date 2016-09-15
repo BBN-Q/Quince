@@ -46,6 +46,9 @@ class Node(QGraphicsRectItem):
         # Save the position to qsettings
         self.settings = QSettings("BBN", "Quince")
 
+        # Any additional json we should emit
+        self.base_params = None
+
         if self.label.boundingRect().topRight().x() > 80:
             self.min_width = self.label.boundingRect().topRight().x()+20
             self.setRect(0,0,self.label.boundingRect().topRight().x()+20,30)
@@ -294,95 +297,19 @@ class Node(QGraphicsRectItem):
         painter.drawRoundedRect(self.rect(), 5.0, 5.0)
 
     def dict_repr(self):
-        dat = {}
-        dat['label'] = self.label.toPlainText()
-        dat['name'] = self.name
-        params = {}
-        for k, v in self.parameters.items():
-            params[k] = v.value()
-        dat['params'] = params
-        dat['pos'] = [self.scenePos().x(), self.scenePos().y()]
-        return dat
-
-    def matlab_repr(self):
-        params = {}
-        params_with_cat    = [v for v in self.parameters.values() if hasattr(v, 'matlab_cat')]
-        params_without_cat = [v for v in self.parameters.values() if not hasattr(v, 'matlab_cat')]
-
-        # Lower case first char
-        lcfc = lambda s: s[:1].lower() + s[1:] if s else ''
-
-        # Remove whitespace
-        rws = lambda s: s.replace(" ", "")
-
-        # Overall conversion
-        matlabize = lambda s: lcfc(rws(s))
-
-        for v in params_without_cat:
-            if not hasattr(v, 'matlab_name'):
-                v.matlab_name = matlabize(v.name)
-
-        for v in params_with_cat:
-            if not hasattr(v, 'matlab_name'):
-                v.matlab_name = matlabize(v.name)
-
-        # For the Alazar Streams, pull the data from the main Alazar object
-        if self.name == "Stream Select Alazar":
-            for k, v in self.inputs.items():
-                for i, w in enumerate(v.wires_in):
-                    if i == 0:
-                        params["channel"] = w.start_obj.name[-1]
-                    else:
-                        print("The Alazar stream must be connected to a single Alazar node.")
-
-        # For the X6, pull the stream information into the X6 dict
-        if self.name == "X6":  
-            for k, v in {"1": self.outputs['Channel 1'], "2": self.outputs['Channel 2']}.items():
-                i = 0
-                for i, w in enumerate(v.wires_out):
-                    if i > 1: 
-                        print("Too many output streams selected.")
-                    else:
-                        for p in w.end_obj.parent.parameters.values():
-                            if not hasattr(p, 'matlab_name'):
-                                p.matlab_name = matlabize(p.name)
-                            p.matlab_cat = "s{}{}".format(k,i+1)
-                            params_with_cat.append(p)
-                    i += 1
-
-        # Construct a dictionary for each category and place it in params
-        cats = set([v.matlab_cat for v in params_with_cat])
-        for cat in cats:
-            params[cat] = {v.matlab_name: v.value() for v in params_with_cat if v.matlab_cat == cat}
-
-        # Add the parameters without a particular category
-        for v in params_without_cat:
-            params[v.matlab_name] = v.value()
-
-        # Special modifications for filters, grab the source name and grab any relevant plotting/output params
-        if self.cat_name == "Filters":
-            for k, v in self.inputs.items():
-                for w in v.wires_in:
-                    params['dataSource'] = w.start_obj.parent.label.toPlainText()
-    
-            # These are the defaults
-            params['saveRecords'] = False
-            params['plotScope']   = False
-            params['saved']       = True
-            for k, v in self.outputs.items():
-                for w in v.wires_out:
-                    if w.end_obj.parent.name == "Plot Data":
-                        params['plotScope'] = True
-                        params['plotMode'] = w.end_obj.parent.parameters["Plot Mode"].value()
-                    elif w.end_obj.parent.name == "Output to HDF5":
-                        params['saveRecords'] = True
-                        params['recordsFilePath'] = w.end_obj.parent.parameters["Filename"].value()
-                    elif w.end_obj.parent.name == "Output to raw text":
-                        params['saveRecords'] = True
-                        params['recordsFilePath'] = w.end_obj.parent.parameters["Filename"].value()
-                                    
-        params['deviceName'] = self.name
-        return params
+        dict_repr = {}
+        if self.base_params is not None:
+            if 'data_source' in self.base_params.keys():
+                source = self.base_params.pop('data_source')
+            if 'name' in self.base_params.keys():
+                name = self.base_params.pop('label')
+        # Hard wire first data source for now...
+        if ('sink' in self.inputs.keys()) and len(self.inputs['sink'].wires_in) > 0:
+            dict_repr['data_source'] = self.inputs['sink'].wires_in[0].start_obj.parent.label.toPlainText()
+        else:
+            dict_repr['data_source'] = ""
+        dict_repr.update(self.base_params)
+        return dict_repr
 
 class TitleText(QGraphicsTextItem):
     '''QGraphicsTextItem with textChanged() signal.'''
