@@ -463,6 +463,8 @@ class NodeScene(QGraphicsScene):
                 data["x__class__"]  = "MeasFilterLibrary"
                 data["x__module__"] = "MeasFilters"
 
+                self.window.ignore_file_updates = True
+                self.window.ignore_timer.start()
                 json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
     def export(self, filename):
@@ -663,6 +665,12 @@ class NodeWindow(QMainWindow):
         self.update_timer.setInterval(100)
         self.update_timer.timeout.connect(self.update_pyqlab)
 
+        # Delay timer to avoid multiple firings
+        self.ignore_timer = QTimer(self)
+        self.ignore_timer.setSingleShot(True)
+        self.ignore_timer.setInterval(1500)
+        self.ignore_timer.timeout.connect(self.stop_ignoring_updates)
+
         # Establish File Watchers for these config files:
         self.watcher = QFileSystemWatcher()
         for f in [measFile, sweepFile, instrFile]:
@@ -671,8 +679,11 @@ class NodeWindow(QMainWindow):
 
         self.update_timer.start()
 
+    def stop_ignoring_updates(self):
+        self.ignore_file_updates = False
+
     def pyqlab_needs_update(self, path):
-        if not self.update_timer.isActive():
+        if not self.update_timer.isActive() and not self.ignore_file_updates:
             self.update_timer.start()
 
     def update_pyqlab(self):
@@ -694,7 +705,7 @@ class NodeWindow(QMainWindow):
     def save(self):
         settings = QSettings("BBN", "Quince")
         self.scene.save_for_pyqlab()
-        
+
     def export(self):
         settings = QSettings("BBN", "Quince")
         # Load the last_export_dir setting if it exists, otherwise use the path to this file
