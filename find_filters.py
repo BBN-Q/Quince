@@ -52,6 +52,8 @@ for mod_name, mod in filter_modules.items():
 		j["outputs"] = f._output_connectors
 		j["inputs"] = f._input_connectors
 		j["parameters"] = []
+		j["x__class__"] = n
+		j["x__module__"] = "MeasFilters"
 
 		with open("{}/{}.json".format(mod_name, n), 'w') as f:
 			json.dump(j, f, sort_keys=True, indent=4, separators=(',', ': '))
@@ -86,6 +88,8 @@ for mod_name, mod in instrument_vendors.items():
 			j["outputs"] = ["source"]
 			j["inputs"] = []
 			j["parameters"] = []
+			j["x__class__"] = n
+			j["x__module__"] = "instruments.Digitizers"
 
 			with open("{}/{}.json".format(mod_name, n), 'w') as f:
 				json.dump(j, f, sort_keys=True, indent=4, separators=(',', ': '))
