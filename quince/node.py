@@ -46,7 +46,14 @@ class Node(QGraphicsRectItem):
         # Save the position to qsettings
         self.settings = QSettings("BBN", "Quince")
 
-        # Any additional json we should emit
+        # Enabled by default
+        self.enabled = True
+
+        # For PyQLab interoperability
+        self.x__class__ = None
+        self.x__module__ = None
+
+        # Any additional json we should retain from PyQLab
         self.base_params = None
 
         if self.label.boundingRect().topRight().x() > 80:
@@ -311,19 +318,17 @@ class Node(QGraphicsRectItem):
         painter.drawRoundedRect(self.rect(), 5.0, 5.0)
 
     def dict_repr(self):
-        dict_repr = {}
-        if self.base_params is not None:
-            if 'data_source' in self.base_params.keys():
-                source = self.base_params.pop('data_source')
-            if 'name' in self.base_params.keys():
-                name = self.base_params.pop('label')
+        dict_repr = dict(self.base_params)
+
         # Hard wire first data source for now...
         if ('sink' in self.inputs.keys()) and len(self.inputs['sink'].wires_in) > 0:
             dict_repr['data_source'] = self.inputs['sink'].wires_in[0].start_obj.parent.label.toPlainText()
         else:
             dict_repr['data_source'] = ""
-        dict_repr.update(self.base_params)
-        dict_repr['enabled'] = self.enabled
+        dict_repr['label']       = self.label.toPlainText()
+        dict_repr['enabled']     = self.enabled
+        dict_repr['x__class__']  = self.x__class__
+        dict_repr['x__module__'] = self.x__module__
         return dict_repr
 
 class TitleText(QGraphicsTextItem):

@@ -24,43 +24,6 @@ from .graph import *
 from .util import *
 from .inspect import *
 
-# Convert from camelCase to pep8 compliant labels
-# http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
-first_cap_re = re.compile('(.)([A-Z][a-z]+)')
-all_cap_re = re.compile('([a-z0-9])([A-Z])')
-def snakeify(name):
-    s1 = first_cap_re.sub(r'\1_\2', name)
-    return all_cap_re.sub(r'\1_\2', s1).lower()
-
-# Recursively re-label dictionary
-def rec_snakeify(dictionary):
-    new = {}
-    for k, v in dictionary.items():
-        if isinstance(v, dict):
-            v = rec_snakeify(v)
-        new[snakeify(k)] = v
-    return new
-
-# Convert from pep8 back to camelCase labels
-# http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
-def camelize(word):
-    if 'x__' in word:
-        return word
-    elif 'i_ffreq' in word:
-        return "IFfreq"
-    else:
-        word = ''.join(x.capitalize() or '_' for x in word.split('_'))
-        return word[0].lower() + word[1:]
-
-# Recursively re-label dictionary
-def rec_camelize(dictionary):
-    new = {}
-    for k, v in dictionary.items():
-        if isinstance(v, dict):
-            v = rec_camelize(v)
-        new[camelize(k)] = v
-    return new
-
 def strip_vendor_names(instr_name):
     vns = ["Agilent", "Alazar", "Keysight", "Holzworth", "Yoko", "Yokogawa"]
     for vn in vns:
@@ -170,6 +133,10 @@ class NodeScene(QGraphicsScene):
                     if 'allowed_destinations' in the_data.keys():
                         node.allowed_destinations = the_data['allowed_destinations']
 
+                    # Set the class and module infor for PyQLab
+                    node.x__class__  = the_data['x__class__']
+                    node.x__module__ = the_data['x__module__']
+
                     # Custom coloring
                     if cat_name == "Inputs":
                         node.set_title_color(QColor(80,100,70))
@@ -223,17 +190,16 @@ class NodeScene(QGraphicsScene):
     def load_pyqlab(self):
 
         name_changes = {'KernelIntegration': 'KernelIntegrator',
-                        'DigitalDemod': 'Channelizer',
-                        'AlazarATS9870': 'ATS9870'}
+                        'DigitalDemod': 'Channelizer'}
 
         with open(self.window.measFile, 'r') as FID:
-            self.meas_settings = rec_snakeify(json.load(FID)["filterDict"])
+            self.meas_settings = json.load(FID)["filterDict"]
 
         with open(self.window.instrFile, 'r') as FID:
-            self.instr_settings = rec_snakeify(json.load(FID)["instrDict"])
+            self.instr_settings = json.load(FID)["instrDict"]
 
         with open(self.window.sweepFile, 'r') as FID:
-            self.sweep_settings = rec_snakeify(json.load(FID)["sweepDict"])
+            self.sweep_settings = json.load(FID)["sweepDict"]
 
         self.loaded_measure_nodes = {} # Keep track of nodes we create
         self.loaded_instr_nodes = {} # Keep track of nodes we create
@@ -271,8 +237,8 @@ class NodeScene(QGraphicsScene):
                 instr_type = name_changes[instr_type]
             # See if the filter exists, and then create it
             if hasattr(self, 'create_'+instr_type):
-                
                 new_node = getattr(self, 'create_'+instr_type)()
+                new_node.enabled = instr_par['enabled']
                 new_node.base_params = instr_par
                 new_node.setOpacity(0.0)
                 stored_loc = settings.value("node_positions/" + instr_name + "_pos")
@@ -283,13 +249,14 @@ class NodeScene(QGraphicsScene):
                 new_node.label.setPlainText(instr_name)
                 self.loaded_instr_nodes[instr_name] = new_node
 
-        for name_camelcase, node in self.loaded_measure_nodes.items():
-            meas_name = self.meas_settings[snakeify(name_camelcase)]["label"]
+        for name, node in self.loaded_measure_nodes.items():
+            import ipdb; ipdb.set_trace()
+            meas_name = self.meas_settings[name]["label"]
             # Do we have the desination node?
-            if self.meas_settings[snakeify(name_camelcase)]["data_source"] in self.loaded_measure_nodes.keys():
+            if self.meas_settings[name]["data_source"] in self.loaded_measure_nodes.keys():
                 # We need more control for which connector
                 # For now default to sink
-                start_node = self.loaded_measure_nodes[self.meas_settings[snakeify(name_camelcase)]["data_source"]]
+                start_node = self.loaded_measure_nodes[self.meas_settings[name]["data_source"]]
                 if 'source' in start_node.outputs.keys():
                     if 'sink' in node.inputs.keys():
                         # Create wire and register with scene
@@ -309,8 +276,8 @@ class NodeScene(QGraphicsScene):
                         print("Could not find sink connector in",meas_name)
                 else:
                     print("Could not find source connector in",start_node)
-            elif self.meas_settings[snakeify(name_camelcase)]["data_source"] in self.loaded_instr_nodes.keys():
-                start_node = self.loaded_instr_nodes[self.meas_settings[snakeify(name_camelcase)]["data_source"]]
+            elif self.meas_settings[name]["data_source"] in self.loaded_instr_nodes.keys():
+                start_node = self.loaded_instr_nodes[self.meas_settings[name]["data_source"]]
                 if 'source' in start_node.outputs.keys():
                     if 'sink' in node.inputs.keys():
                         # Create wire and register with scene
@@ -362,94 +329,94 @@ class NodeScene(QGraphicsScene):
             self.removeItem(o)
         self.load_pyqlab()
 
-    def load(self, filename):
-        with open(filename, 'r') as df:
+    # def load(self, filename):
+    #     with open(filename, 'r') as df:
 
-            # Clear scene
-            nodes = [i for i in self.items() if isinstance(i, Node)]
-            wires = [i for i in self.items() if isinstance(i, Wire)]
-            for o in nodes+wires:
-                self.removeItem(o)
+    #         # Clear scene
+    #         nodes = [i for i in self.items() if isinstance(i, Node)]
+    #         wires = [i for i in self.items() if isinstance(i, Wire)]
+    #         for o in nodes+wires:
+    #             self.removeItem(o)
 
-            data = json.load(df)
-            nodes = data['nodes']
-            wires = data['wires']
-            sweeps = data['sweeps']
+    #         data = json.load(df)
+    #         nodes = data['nodes']
+    #         wires = data['wires']
+    #         sweeps = data['sweeps']
 
-            new_nodes = {} # Keep track of nodes we create
+    #         new_nodes = {} # Keep track of nodes we create
 
-            for n in nodes:
-                create_node_func_name = "create_"+("".join(n['name'].split()))
-                if hasattr(self, create_node_func_name):
-                    if n['label'] not in new_nodes.keys():
-                        new_node = getattr(self, create_node_func_name)()
-                        new_node.setPos(float(n['pos'][0]), float(n['pos'][1]))
-                        for k, v in n['params'].items():
-                            new_node.parameters[k].set_value(v)
-                        new_node.label.setPlainText(n['label'])
-                        new_nodes[n['label']] = new_node
-                    else:
-                        self.window.set_status("Node cannot be named {}, label already in use".format(n['label']))
-                else:
-                    self.window.set_status("Could not load node of type {}, please check nodes directory.".format(n['name']))
+    #         for n in nodes:
+    #             create_node_func_name = "create_"+("".join(n['name'].split()))
+    #             if hasattr(self, create_node_func_name):
+    #                 if n['label'] not in new_nodes.keys():
+    #                     new_node = getattr(self, create_node_func_name)()
+    #                     new_node.setPos(float(n['pos'][0]), float(n['pos'][1]))
+    #                     for k, v in n['params'].items():
+    #                         new_node.parameters[k].set_value(v)
+    #                     new_node.label.setPlainText(n['label'])
+    #                     new_nodes[n['label']] = new_node
+    #                 else:
+    #                     self.window.set_status("Node cannot be named {}, label already in use".format(n['label']))
+    #             else:
+    #                 self.window.set_status("Could not load node of type {}, please check nodes directory.".format(n['name']))
 
-            for w in wires:
-                # Instantiate a little later
-                new_wire = None
+    #         for w in wires:
+    #             # Instantiate a little later
+    #             new_wire = None
 
-                start_node_name = w['start']['node']
-                end_node_name   = w['end']['node']
-                start_conn_name = w['start']['connector_name']
-                end_conn_name   = w['end']['connector_name']
+    #             start_node_name = w['start']['node']
+    #             end_node_name   = w['end']['node']
+    #             start_conn_name = w['start']['connector_name']
+    #             end_conn_name   = w['end']['connector_name']
 
-                start_node = new_nodes[start_node_name]
-                end_node   = new_nodes[end_node_name]
+    #             start_node = new_nodes[start_node_name]
+    #             end_node   = new_nodes[end_node_name]
 
-                # Find our beginning connector
-                if start_conn_name in start_node.outputs.keys():
-                    new_wire = Wire(start_node.outputs[start_conn_name])
-                    self.addItem(new_wire)
-                    new_wire.set_start(start_node.outputs[start_conn_name].scenePos())
-                    start_node.outputs[start_conn_name].wires_out.append(new_wire)
+    #             # Find our beginning connector
+    #             if start_conn_name in start_node.outputs.keys():
+    #                 new_wire = Wire(start_node.outputs[start_conn_name])
+    #                 self.addItem(new_wire)
+    #                 new_wire.set_start(start_node.outputs[start_conn_name].scenePos())
+    #                 start_node.outputs[start_conn_name].wires_out.append(new_wire)
                     
-                    # Find our end connector
-                    if end_conn_name in end_node.inputs.keys():
-                        new_wire.end_obj = end_node.inputs[end_conn_name]
-                        new_wire.set_end(end_node.inputs[end_conn_name].scenePos())
-                        end_node.inputs[end_conn_name].wires_in.append(new_wire)
-                    elif end_conn_name in end_node.parameters.keys():
-                        new_wire.end_obj = end_node.parameters[end_conn_name]
-                        new_wire.set_end(end_node.parameters[end_conn_name].scenePos())
-                        end_node.parameters[end_conn_name].wires_in.append(new_wire)
-                    else:
-                        self.window.set_status("Could not find input {} on node {}.".format(end_conn_name, end_node_name))
-                else:
-                    self.window.set_status("Could not find output {} on node {}.".format(start_conn_name, start_node_name))
+    #                 # Find our end connector
+    #                 if end_conn_name in end_node.inputs.keys():
+    #                     new_wire.end_obj = end_node.inputs[end_conn_name]
+    #                     new_wire.set_end(end_node.inputs[end_conn_name].scenePos())
+    #                     end_node.inputs[end_conn_name].wires_in.append(new_wire)
+    #                 elif end_conn_name in end_node.parameters.keys():
+    #                     new_wire.end_obj = end_node.parameters[end_conn_name]
+    #                     new_wire.set_end(end_node.parameters[end_conn_name].scenePos())
+    #                     end_node.parameters[end_conn_name].wires_in.append(new_wire)
+    #                 else:
+    #                     self.window.set_status("Could not find input {} on node {}.".format(end_conn_name, end_node_name))
+    #             else:
+    #                 self.window.set_status("Could not find output {} on node {}.".format(start_conn_name, start_node_name))
 
-            self.window.sweep_view.model.clear()
-            sorted_sweeps = sorted(sweeps, key=lambda k: k['number'])
-            for s in sorted_sweeps:
-                item = QStandardItem(s['name'])
-                item.setCheckable(True)
-                item.setDropEnabled(False)
-                item.setEditable(False)
-                item.setCheckState(s['enabled'])
-                self.window.sweep_view.model.appendRow(item)
+    #         self.window.sweep_view.model.clear()
+    #         sorted_sweeps = sorted(sweeps, key=lambda k: k['number'])
+    #         for s in sorted_sweeps:
+    #             item = QStandardItem(s['name'])
+    #             item.setCheckable(True)
+    #             item.setDropEnabled(False)
+    #             item.setEditable(False)
+    #             item.setCheckState(s['enabled'])
+    #             self.window.sweep_view.model.appendRow(item)
 
-            # Make sure that sweep nodes inherit the datatypes, etc., from their connectors
-            for n in [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]:
-                n.update_fields_from_connector()
+    #         # Make sure that sweep nodes inherit the datatypes, etc., from their connectors
+    #         for n in [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]:
+    #             n.update_fields_from_connector()
 
-    def save(self, filename):
-        with open(filename, 'w') as df:
-            nodes  = [i for i in self.items() if isinstance(i, Node)]
-            wires  = [i for i in self.items() if isinstance(i, Wire)]
+    # def save(self, filename):
+    #     with open(filename, 'w') as df:
+    #         nodes  = [i for i in self.items() if isinstance(i, Node)]
+    #         wires  = [i for i in self.items() if isinstance(i, Wire)]
             
-            data = {}
-            data['nodes']  = [n.dict_repr() for n in nodes]
-            data['wires']  = [n.dict_repr() for n in wires]
-            # data['sweeps'] = sweep_dict
-            json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
+    #         data = {}
+    #         data['nodes']  = [n.dict_repr() for n in nodes]
+    #         data['wires']  = [n.dict_repr() for n in wires]
+    #         # data['sweeps'] = sweep_dict
+    #         json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
     def save_for_pyqlab(self):
         if not hasattr(self, 'meas_settings'):
@@ -459,7 +426,7 @@ class NodeScene(QGraphicsScene):
                 nodes  = [i for i in self.items() if isinstance(i, Node)]
                 
                 data = {}
-                data["filterDict"]  = {n.label.toPlainText(): rec_camelize(n.dict_repr()) for n in nodes if n.base_params['x__module__'] == 'MeasFilters'}
+                data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.base_params['x__module__'] == 'MeasFilters'}
                 data["version"]     = 1
                 data["x__class__"]  = "MeasFilterLibrary"
                 data["x__module__"] = "MeasFilters"
@@ -784,6 +751,8 @@ class NodeWindow(QMainWindow):
 
             # Set parameters from old
             new_node.update_parameters_from(sn)
+            new_node.base_params = dict(sn.base_params)
+            new_node.enabled = sn.enabled
 
             # Update the mapping
             old_to_new[sn] = new_node
