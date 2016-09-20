@@ -43,9 +43,6 @@ class Node(QGraphicsRectItem):
         self.label = TitleText(self.name, parent=self)
         self.label.setDefaultTextColor(Qt.white)
 
-        # Save the position to qsettings
-        self.settings = QSettings("BBN", "Quince")
-
         # Enabled by default
         self.enabled = True
 
@@ -247,7 +244,6 @@ class Node(QGraphicsRectItem):
             for k, v in self.parameters.items():
                 for w in v.wires_in:
                     w.set_end(v.pos()+value)
-            self.settings.setValue("node_positions/" + self.label.toPlainText() + "_pos", self.pos())
         return QGraphicsRectItem.itemChange(self, change, value)
 
     def itemResize(self, delta):
@@ -318,7 +314,10 @@ class Node(QGraphicsRectItem):
         painter.drawRoundedRect(self.rect(), 5.0, 5.0)
 
     def dict_repr(self):
-        dict_repr = dict(self.base_params)
+        if self.base_params is not None:
+            dict_repr = dict(self.base_params)
+        else:
+            dict_repr = {}
 
         # Hard wire first data source for now...
         if ('sink' in self.inputs.keys()) and len(self.inputs['sink'].wires_in) > 0:

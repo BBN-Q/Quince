@@ -60,6 +60,8 @@ class NodeScene(QGraphicsScene):
 
         self.last_click = self.backdrop.pos()
 
+        self.settings = QSettings("BBN", "Quince")
+
     def clear_wires(self, only_clear_orphaned=False):
         wires = [i for i in self.items() if isinstance(i, Wire)]
         for wire in wires:
@@ -204,8 +206,6 @@ class NodeScene(QGraphicsScene):
         self.loaded_measure_nodes = {} # Keep track of nodes we create
         self.loaded_instr_nodes = {} # Keep track of nodes we create
 
-        settings = QSettings("BBN", "Quince")
-
         # Create and place the filters
         for meas_par in self.meas_settings.values():
 
@@ -220,10 +220,12 @@ class NodeScene(QGraphicsScene):
                 new_node.enabled = meas_par['enabled']
                 new_node.base_params = meas_par
                 new_node.setOpacity(0.0)
-                stored_loc = settings.value("node_positions/" + meas_name + "_pos")
-                if stored_loc is not None:
+                stored_loc = self.settings.value("node_positions/" + meas_name + "_pos")
+                print(meas_name, stored_loc)
+                if stored_loc is not None and isinstance(stored_loc, QPointF):
                     new_node.setPos(stored_loc)
                 else:
+                    import ipdb; ipdb.set_trace()
                     new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
                 new_node.label.setPlainText(meas_name)
                 self.loaded_measure_nodes[meas_name] = new_node
@@ -241,7 +243,7 @@ class NodeScene(QGraphicsScene):
                 new_node.enabled = instr_par['enabled']
                 new_node.base_params = instr_par
                 new_node.setOpacity(0.0)
-                stored_loc = settings.value("node_positions/" + instr_name + "_pos")
+                stored_loc = self.settings.value("node_positions/" + instr_name + "_pos")
                 if stored_loc is not None:
                     new_node.setPos(stored_loc)
                 else:
@@ -250,7 +252,6 @@ class NodeScene(QGraphicsScene):
                 self.loaded_instr_nodes[instr_name] = new_node
 
         for name, node in self.loaded_measure_nodes.items():
-            # import ipdb; ipdb.set_trace()
             meas_name = self.meas_settings[name]["label"]
             # Do we have the desination node?
             if self.meas_settings[name]["data_source"] in self.loaded_measure_nodes.keys():
@@ -329,96 +330,14 @@ class NodeScene(QGraphicsScene):
             self.removeItem(o)
         self.load_pyqlab()
 
-    # def load(self, filename):
-    #     with open(filename, 'r') as df:
-
-    #         # Clear scene
-    #         nodes = [i for i in self.items() if isinstance(i, Node)]
-    #         wires = [i for i in self.items() if isinstance(i, Wire)]
-    #         for o in nodes+wires:
-    #             self.removeItem(o)
-
-    #         data = json.load(df)
-    #         nodes = data['nodes']
-    #         wires = data['wires']
-    #         sweeps = data['sweeps']
-
-    #         new_nodes = {} # Keep track of nodes we create
-
-    #         for n in nodes:
-    #             create_node_func_name = "create_"+("".join(n['name'].split()))
-    #             if hasattr(self, create_node_func_name):
-    #                 if n['label'] not in new_nodes.keys():
-    #                     new_node = getattr(self, create_node_func_name)()
-    #                     new_node.setPos(float(n['pos'][0]), float(n['pos'][1]))
-    #                     for k, v in n['params'].items():
-    #                         new_node.parameters[k].set_value(v)
-    #                     new_node.label.setPlainText(n['label'])
-    #                     new_nodes[n['label']] = new_node
-    #                 else:
-    #                     self.window.set_status("Node cannot be named {}, label already in use".format(n['label']))
-    #             else:
-    #                 self.window.set_status("Could not load node of type {}, please check nodes directory.".format(n['name']))
-
-    #         for w in wires:
-    #             # Instantiate a little later
-    #             new_wire = None
-
-    #             start_node_name = w['start']['node']
-    #             end_node_name   = w['end']['node']
-    #             start_conn_name = w['start']['connector_name']
-    #             end_conn_name   = w['end']['connector_name']
-
-    #             start_node = new_nodes[start_node_name]
-    #             end_node   = new_nodes[end_node_name]
-
-    #             # Find our beginning connector
-    #             if start_conn_name in start_node.outputs.keys():
-    #                 new_wire = Wire(start_node.outputs[start_conn_name])
-    #                 self.addItem(new_wire)
-    #                 new_wire.set_start(start_node.outputs[start_conn_name].scenePos())
-    #                 start_node.outputs[start_conn_name].wires_out.append(new_wire)
-
-    #                 # Find our end connector
-    #                 if end_conn_name in end_node.inputs.keys():
-    #                     new_wire.end_obj = end_node.inputs[end_conn_name]
-    #                     new_wire.set_end(end_node.inputs[end_conn_name].scenePos())
-    #                     end_node.inputs[end_conn_name].wires_in.append(new_wire)
-    #                 elif end_conn_name in end_node.parameters.keys():
-    #                     new_wire.end_obj = end_node.parameters[end_conn_name]
-    #                     new_wire.set_end(end_node.parameters[end_conn_name].scenePos())
-    #                     end_node.parameters[end_conn_name].wires_in.append(new_wire)
-    #                 else:
-    #                     self.window.set_status("Could not find input {} on node {}.".format(end_conn_name, end_node_name))
-    #             else:
-    #                 self.window.set_status("Could not find output {} on node {}.".format(start_conn_name, start_node_name))
-
-    #         self.window.sweep_view.model.clear()
-    #         sorted_sweeps = sorted(sweeps, key=lambda k: k['number'])
-    #         for s in sorted_sweeps:
-    #             item = QStandardItem(s['name'])
-    #             item.setCheckable(True)
-    #             item.setDropEnabled(False)
-    #             item.setEditable(False)
-    #             item.setCheckState(s['enabled'])
-    #             self.window.sweep_view.model.appendRow(item)
-
-    #         # Make sure that sweep nodes inherit the datatypes, etc., from their connectors
-    #         for n in [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]:
-    #             n.update_fields_from_connector()
-
-    # def save(self, filename):
-    #     with open(filename, 'w') as df:
-    #         nodes  = [i for i in self.items() if isinstance(i, Node)]
-    #         wires  = [i for i in self.items() if isinstance(i, Wire)]
-
-    #         data = {}
-    #         data['nodes']  = [n.dict_repr() for n in nodes]
-    #         data['wires']  = [n.dict_repr() for n in wires]
-    #         # data['sweeps'] = sweep_dict
-    #         json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
+    def save_node_positions_to_settings(self):
+        for n in [i for i in self.items() if isinstance(i, Node)]:
+            self.settings.setValue("node_positions/" + n.label.toPlainText() + "_pos", n.pos())
+        self.settings.sync()
 
     def save_for_pyqlab(self):
+        self.save_node_positions_to_settings()
+
         if not hasattr(self, 'meas_settings'):
             self.window.set_status("Not launched from PyQLab, and therefore cannot save to PyQLab JSON.")
         else:
@@ -426,7 +345,7 @@ class NodeScene(QGraphicsScene):
                 nodes  = [i for i in self.items() if isinstance(i, Node)]
 
                 data = {}
-                data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.base_params['x__module__'] == 'MeasFilters'}
+                data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'MeasFilters'}
                 data["version"]     = 1
                 data["x__class__"]  = "MeasFilterLibrary"
                 data["x__module__"] = "MeasFilters"
@@ -666,32 +585,29 @@ class NodeWindow(QMainWindow):
         self.scene.reload_pyqlab()
 
     def load(self):
-        settings = QSettings("BBN", "Quince")
         # Load the last_dir setting if it exists, otherwise use the path to this file
-        path = settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
+        path = self.settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
 
         fn = QFileDialog.getOpenFileName(self, 'Load Graph', path)
         if fn[0] != '':
             self.scene.load(fn[0])
 
             # Push this directory to qsettings
-            settings.setValue("last_dir", QVariant(fn[0]))
+            self.settings.setValue("last_dir", QVariant(fn[0]))
 
     def save(self):
-        settings = QSettings("BBN", "Quince")
         self.scene.save_for_pyqlab()
 
     def export(self):
-        settings = QSettings("BBN", "Quince")
         # Load the last_export_dir setting if it exists, otherwise use the path to this file
-        path = settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
-
+        path = self.settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
+        
         fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
         if fn[0] != '':
             self.scene.export(fn[0])
 
             # Push this directory to qsettings
-            settings.setValue("last_export_dir", QVariant(fn[0]))
+            self.settings.setValue("last_export_dir", QVariant(fn[0]))
 
     def select_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
@@ -751,7 +667,8 @@ class NodeWindow(QMainWindow):
 
             # Set parameters from old
             new_node.update_parameters_from(sn)
-            new_node.base_params = dict(sn.base_params)
+            if new_node.base_params is not None:
+                new_node.base_params = dict(sn.base_params)
             new_node.enabled = sn.enabled
 
             # Update the mapping
