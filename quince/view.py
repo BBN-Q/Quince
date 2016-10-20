@@ -80,10 +80,10 @@ class NodeScene(QGraphicsScene):
             with open(filename) as data_file:
                 cat  = os.path.basename(os.path.dirname(filename))
                 data = json.load(data_file)
-                
+
                 # Create a QAction and add to the menu
                 action = QAction(data['name'], self)
-                
+
                 # Create function for dropping node on canvas
                 def create(the_data, cat_name):
                     node = Node(the_data['name'])
@@ -151,7 +151,7 @@ class NodeScene(QGraphicsScene):
                     node.setPos(self.last_click)
                     self.addItem(node)
                     return node
-                    
+
                 # Add to class
                 name = "create_"+("".join(data['name'].split()))
                 setattr(self, name, partial(create, data, cat))
@@ -161,7 +161,7 @@ class NodeScene(QGraphicsScene):
                 action.triggered.connect(func)
                 self.sub_menus[cat].addAction(action)
 
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pycontrol-nodes")
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "auspex-nodes")
         node_files = sorted(glob.glob(path+'/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
 
@@ -176,7 +176,7 @@ class NodeScene(QGraphicsScene):
         self.instruments_menu = self.menu.addMenu("instruments")
         self.sub_menus["instruments"] = self.instruments_menu
 
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pycontrol-nodes/instruments")
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "auspex-nodes/instruments")
         node_files = sorted(glob.glob(path+'/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
 
@@ -250,7 +250,7 @@ class NodeScene(QGraphicsScene):
                 self.loaded_instr_nodes[instr_name] = new_node
 
         for name, node in self.loaded_measure_nodes.items():
-            import ipdb; ipdb.set_trace()
+            # import ipdb; ipdb.set_trace()
             meas_name = self.meas_settings[name]["label"]
             # Do we have the desination node?
             if self.meas_settings[name]["data_source"] in self.loaded_measure_nodes.keys():
@@ -263,11 +263,11 @@ class NodeScene(QGraphicsScene):
                         new_wire = Wire(start_node.outputs['source'])
                         new_wire.setOpacity(0.0)
                         self.addItem(new_wire)
-                        
+
                         # Add to start node
                         new_wire.set_start(start_node.outputs['source'].scenePos())
                         start_node.outputs['source'].wires_out.append(new_wire)
-                        
+
                         # Add to end node
                         new_wire.end_obj = node.inputs['sink']
                         new_wire.set_end(node.inputs['sink'].scenePos())
@@ -284,11 +284,11 @@ class NodeScene(QGraphicsScene):
                         new_wire = Wire(start_node.outputs['source'])
                         new_wire.setOpacity(0.0)
                         self.addItem(new_wire)
-                        
+
                         # Add to start node
                         new_wire.set_start(start_node.outputs['source'].scenePos())
                         start_node.outputs['source'].wires_out.append(new_wire)
-                        
+
                         # Add to end node
                         new_wire.end_obj = node.inputs['sink']
                         new_wire.set_end(node.inputs['sink'].scenePos())
@@ -315,7 +315,7 @@ class NodeScene(QGraphicsScene):
                 if isinstance(i, Node) or isinstance(i, Wire):
                     i.setOpacity(float(self.draw_i)/self.duration)
             self.draw_i += self.increment
-        else:  
+        else:
             for i in self.items():
                 if isinstance(i, Node) or isinstance(i, Wire):
                     i.setOpacity(1.0)
@@ -378,7 +378,7 @@ class NodeScene(QGraphicsScene):
     #                 self.addItem(new_wire)
     #                 new_wire.set_start(start_node.outputs[start_conn_name].scenePos())
     #                 start_node.outputs[start_conn_name].wires_out.append(new_wire)
-                    
+
     #                 # Find our end connector
     #                 if end_conn_name in end_node.inputs.keys():
     #                     new_wire.end_obj = end_node.inputs[end_conn_name]
@@ -411,7 +411,7 @@ class NodeScene(QGraphicsScene):
     #     with open(filename, 'w') as df:
     #         nodes  = [i for i in self.items() if isinstance(i, Node)]
     #         wires  = [i for i in self.items() if isinstance(i, Wire)]
-            
+
     #         data = {}
     #         data['nodes']  = [n.dict_repr() for n in nodes]
     #         data['wires']  = [n.dict_repr() for n in wires]
@@ -424,7 +424,7 @@ class NodeScene(QGraphicsScene):
         else:
             with open(self.window.measFile, 'w') as df:
                 nodes  = [i for i in self.items() if isinstance(i, Node)]
-                
+
                 data = {}
                 data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.base_params['x__module__'] == 'MeasFilters'}
                 data["version"]     = 1
@@ -470,8 +470,8 @@ class NodeView(QGraphicsView):
     """docstring for NodeView"""
     def __init__(self, scene):
         super(NodeView, self).__init__(scene)
-        self.scene = scene        
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse) 
+        self.scene = scene
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setRenderHint(QPainter.Antialiasing)
         self.current_scale = 1.0
 
@@ -512,7 +512,7 @@ class NodeWindow(QMainWindow):
         super(NodeWindow, self).__init__(parent=parent)
         self.setWindowTitle("Nodes")
         self.setGeometry(50,50,1300,600)
-        
+
         # Setup graphics
         self.scene = NodeScene(window=self)
         self.view  = NodeView(self.scene)
@@ -520,47 +520,47 @@ class NodeWindow(QMainWindow):
         # Setup menu
         self.status_bar = self.statusBar()
 
-        exitAction = QAction('&Exit', self)        
+        exitAction = QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(QApplication.instance().quit)
 
-        saveAction = QAction('&Save', self)        
+        saveAction = QAction('&Save', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.save)
 
-        exportAction = QAction('&Export To Matlab', self)        
+        exportAction = QAction('&Export To Matlab', self)
         exportAction.setShortcut('Shift+Ctrl+S')
         exportAction.setStatusTip('Export To Matlab')
         exportAction.triggered.connect(self.export)
 
-        openAction = QAction('&Open', self)        
+        openAction = QAction('&Open', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open')
         openAction.triggered.connect(self.load)
 
-        selectAllAction = QAction('&Select All', self)        
+        selectAllAction = QAction('&Select All', self)
         selectAllAction.setShortcut('Ctrl+A')
         selectAllAction.setStatusTip('Select All')
         selectAllAction.triggered.connect(self.select_all)
 
-        selectAllConnectedAction = QAction('&Select All Connected', self)        
+        selectAllConnectedAction = QAction('&Select All Connected', self)
         selectAllConnectedAction.setShortcut('Shift+Ctrl+A')
         selectAllConnectedAction.setStatusTip('Select All Connected')
         selectAllConnectedAction.triggered.connect(self.select_all_connected)
 
-        collapseAllAction = QAction('&Collapse All', self)        
+        collapseAllAction = QAction('&Collapse All', self)
         collapseAllAction.setShortcut('Ctrl+K')
         collapseAllAction.setStatusTip('Collapse All')
         collapseAllAction.triggered.connect(self.collapse_all)
 
-        toggleEnabledAction = QAction('&Toggle Descendants', self)        
+        toggleEnabledAction = QAction('&Toggle Descendants', self)
         toggleEnabledAction.setShortcut('Ctrl+E')
         toggleEnabledAction.setStatusTip('Toggle the Enabled/Disabled status of all descendant nodes.')
         toggleEnabledAction.triggered.connect(self.toggle_enable_descendants)
 
-        duplicateAction = QAction('&Duplicate', self)        
+        duplicateAction = QAction('&Duplicate', self)
         duplicateAction.setShortcut('Ctrl+D')
         duplicateAction.setStatusTip('Duplicate')
         duplicateAction.triggered.connect(self.duplicate)
@@ -599,7 +599,7 @@ class NodeWindow(QMainWindow):
         self.svgitem.setSharedRenderer(svgrend)
         self.scene.addItem(self.svgitem)
         self.svgitem.setScale(0.5)
-        self.svgitem.setPos(self.svgitem.pos().x()-self.svgitem.boundingRect().width()/4, 
+        self.svgitem.setPos(self.svgitem.pos().x()-self.svgitem.boundingRect().width()/4,
                             self.svgitem.pos().y()-self.svgitem.boundingRect().height()/4)
 
         self.draw_i = 0
@@ -618,7 +618,7 @@ class NodeWindow(QMainWindow):
             self.svgitem.setOpacity(1.0-float(self.draw_i)/self.duration)
             self.draw_i += self.increment
             # self.increment += 0.1
-        else:  
+        else:
             self.timer.stop()
             self.scene.removeItem(self.svgitem)
 
@@ -628,11 +628,11 @@ class NodeWindow(QMainWindow):
             return
 
         self.set_status("Loading PyQLab configuration files...")
-        
+
         self.measFile  = measFile
         self.sweepFile = sweepFile
         self.instrFile = instrFile
-        
+
         # Delay timer to avoid multiple firings
         self.update_timer = QTimer(self)
         self.update_timer.setSingleShot(True)
@@ -685,7 +685,7 @@ class NodeWindow(QMainWindow):
         settings = QSettings("BBN", "Quince")
         # Load the last_export_dir setting if it exists, otherwise use the path to this file
         path = settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
-        
+
         fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
         if fn[0] != '':
             self.scene.export(fn[0])
@@ -714,7 +714,7 @@ class NodeWindow(QMainWindow):
 
     def toggle_enable_descendants(self):
         selected_nodes = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
-        
+
         if len(selected_nodes) == 0:
             self.set_status("No nodes selected.")
             return
@@ -741,7 +741,7 @@ class NodeWindow(QMainWindow):
     def duplicate(self):
         selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
         old_to_new = {}
-        
+
         for sn in selected_nodes:
             node_names = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node)]
 
