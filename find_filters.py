@@ -3,31 +3,33 @@ import pkgutil
 import inspect
 import json
 import os.path
+import sys
 
 try:
-	import pycontrol
-	import pycontrol.filters as filt
-	import pycontrol.instruments as instr
-	from pycontrol.filters.filter import Filter
-	from pycontrol.instruments.instrument import Instrument, SCPIInstrument, CLibInstrument
+	import auspex
+	import auspex.filters as filt
+	import auspex.instruments as instr
+	from auspex.filters.filter import Filter
+	from auspex.instruments.instrument import Instrument, SCPIInstrument, CLibInstrument
 except:
-	print("Could not locate pycontrol in the python path.")
+	print("Could not locate auspex in the python path.")
+	sys.exit()
 
 # Find all of the filters
 filter_modules = {
-    name: importlib.import_module('pycontrol.filters.' + name)
+    name: importlib.import_module('auspex.filters.' + name)
     for loader, name, is_pkg in pkgutil.walk_packages(filt.__path__)
 }
 filter_modules.pop('filter') # We don't want the base class
 
 # Find all of the instruments
 instrument_vendors = {
-    name: importlib.import_module('pycontrol.instruments.' + name)
+    name: importlib.import_module('auspex.instruments.' + name)
     for loader, name, is_pkg in pkgutil.iter_modules(instr.__path__)
 }
 
 # Make the base directory:
-nodes_dirname = "pycontrol-nodes"
+nodes_dirname = "auspex-nodes"
 os.makedirs(nodes_dirname)
 os.chdir(nodes_dirname)
 
@@ -36,7 +38,7 @@ for mod_name, mod in filter_modules.items():
 	os.makedirs(mod_name)
 
 	new_filters = {n: f for n, f in mod.__dict__.items() if inspect.isclass(f)
-															and issubclass(f, Filter) 
+															and issubclass(f, Filter)
 															and f != Filter}
 	print("Found: {}".format(list(new_filters.keys())))
 
@@ -45,7 +47,7 @@ for mod_name, mod in filter_modules.items():
 	for n, f in new_filters.items():
 		print('Input Connectors: '  + str(f._input_connectors))
 		print('Output Connectors: ' + str(f._output_connectors))
-		
+
 		# Start a dictionary for JSON output
 		j = {}
 		j["name"] =  n
