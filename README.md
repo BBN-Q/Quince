@@ -1,4 +1,4 @@
-![quince-small](/uploads/931ad19ca639cd00291924809fb784d5/quince-small.png)
+![quince-small](doc/images/quince-small.png)
 
 This project is intended as an alternative means of defining the topology of an experiment, and will replace certain functionality of ExpSettingsGUI. Currently envisioned use cases:
 
@@ -15,8 +15,10 @@ This project is intended as an alternative means of defining the topology of an 
 ## Dependencies ##
 
 Python Packages
+1. Python 3
 1. PyQt5
-2. networkx
+1. networkx
+1. JSONLibraryUtils
 
 ### Linux ###
 
