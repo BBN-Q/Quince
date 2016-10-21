@@ -221,7 +221,6 @@ class NodeScene(QGraphicsScene):
                 new_node.base_params = meas_par
                 new_node.setOpacity(0.0)
                 stored_loc = self.settings.value("node_positions/" + meas_name + "_pos")
-                print(meas_name, stored_loc)
                 if stored_loc is not None and isinstance(stored_loc, QPointF):
                     new_node.setPos(stored_loc)
                 else:
@@ -253,49 +252,58 @@ class NodeScene(QGraphicsScene):
 
         for name, node in self.loaded_measure_nodes.items():
             meas_name = self.meas_settings[name]["label"]
-            # Do we have the desination node?
-            if self.meas_settings[name]["data_source"] in self.loaded_measure_nodes.keys():
-                # We need more control for which connector
-                # For now default to sink
-                start_node = self.loaded_measure_nodes[self.meas_settings[name]["data_source"]]
-                if 'source' in start_node.outputs.keys():
+            
+            # Get the source name. If it contains a colon, then the part before the colon
+            # is the node name and the part after is the connector name. Otherwise, the
+            # connector name is just "source" and the source name is the node name.
+            
+            source = self.meas_settings[name]["data_source"].split(":")
+            node_name = source[0]
+            conn_name = "source"
+            if len(source) == 2:
+                conn_name = source[1]
+
+            if node_name in self.loaded_measure_nodes.keys():
+                start_node = self.loaded_measure_nodes[node_name]
+                if conn_name in start_node.outputs.keys():
                     if 'sink' in node.inputs.keys():
                         # Create wire and register with scene
-                        new_wire = Wire(start_node.outputs['source'])
+                        new_wire = Wire(start_node.outputs[conn_name])
                         new_wire.setOpacity(0.0)
                         self.addItem(new_wire)
 
                         # Add to start node
-                        new_wire.set_start(start_node.outputs['source'].scenePos())
-                        start_node.outputs['source'].wires_out.append(new_wire)
-
+                        new_wire.set_start(start_node.outputs[conn_name].scenePos())
+                        start_node.outputs[conn_name].wires_out.append(new_wire)
+                        
                         # Add to end node
                         new_wire.end_obj = node.inputs['sink']
                         new_wire.set_end(node.inputs['sink'].scenePos())
                         node.inputs['sink'].wires_in.append(new_wire)
                     else:
-                        print("Could not find sink connector in",meas_name)
+                        print("Could not find sink connector in", meas_name)
                 else:
-                    print("Could not find source connector in",start_node)
-            elif self.meas_settings[name]["data_source"] in self.loaded_instr_nodes.keys():
-                start_node = self.loaded_instr_nodes[self.meas_settings[name]["data_source"]]
-                if 'source' in start_node.outputs.keys():
+                    print("Could not find source connector ", conn_name, "for node", node_name)
+            
+            elif node_name in self.loaded_instr_nodes.keys():
+                start_node = self.loaded_instr_nodes[node_name]
+                if conn_name in start_node.outputs.keys():
                     if 'sink' in node.inputs.keys():
                         # Create wire and register with scene
-                        new_wire = Wire(start_node.outputs['source'])
+                        new_wire = Wire(start_node.outputs[conn_name])
                         new_wire.setOpacity(0.0)
                         self.addItem(new_wire)
 
                         # Add to start node
-                        new_wire.set_start(start_node.outputs['source'].scenePos())
-                        start_node.outputs['source'].wires_out.append(new_wire)
-
+                        new_wire.set_start(start_node.outputs[conn_name].scenePos())
+                        start_node.outputs[conn_name].wires_out.append(new_wire)
+                        
                         # Add to end node
                         new_wire.end_obj = node.inputs['sink']
                         new_wire.set_end(node.inputs['sink'].scenePos())
                         node.inputs['sink'].wires_in.append(new_wire)
                     else:
-                        print("Could not find sink connector in",meas_name)
+                        print("Could not find sink connector ", conn_name)
             else:
                 print("Could not find data_source")
 

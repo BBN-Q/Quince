@@ -319,11 +319,24 @@ class Node(QGraphicsRectItem):
         else:
             dict_repr = {}
 
-        # Hard wire first data source for now...
+        # Find the name of the source connectors (assuming one connection)
+        # The default connector name is "source", in which case data_source
+        # is just the name of the node. Otherwise, we return a data_source
+        # of the form "node_name:connector_name", e.g.
+        # "averager:partial_averages"
+
         if ('sink' in self.inputs.keys()) and len(self.inputs['sink'].wires_in) > 0:
-            dict_repr['data_source'] = self.inputs['sink'].wires_in[0].start_obj.parent.label.toPlainText()
+            connector = self.inputs['sink'].wires_in[0].start_obj
+            node_name = connector.parent.label.toPlainText()
+            conn_name = connector.name
+            
+            if conn_name == "source":
+                dict_repr['data_source'] = node_name
+            else:
+                dict_repr['data_source'] = node_name + ":" + conn_name
         else:
             dict_repr['data_source'] = ""
+
         dict_repr['label']       = self.label.toPlainText()
         dict_repr['enabled']     = self.enabled
         dict_repr['x__class__']  = self.x__class__
