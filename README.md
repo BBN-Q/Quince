@@ -1,16 +1,12 @@
 ![quince-small](doc/images/quince-small.png)
+[![Documentation Status](https://readthedocs.org/projects/quince/badge/?version=latest)](http://quince.readthedocs.io/en/latest/?badge=latest)
 
-This project is intended as an alternative means of defining the topology of an experiment, and will replace certain functionality of ExpSettingsGUI. Currently envisioned use cases:
+This project is intended as an alternative means of defining the topology of an experiment, and will augment certain functionality of PyQLab's ExpSettingsGUI. Currently envisioned use cases:
 
 1. Graphically construct measurement filter pipelines.
 2. Graphically establish logical qubits with physical measurement apparatus.
 
-## General Outline ##
-
-1. Measurement topology is established by dragging wires between nodes.
-2. Each node is described by a single JSON file.
-3. Node parameters (e.g. frequency on a signal generator) are set manually or associated with sweeps.
-4. The graphs are saved to JSON format describing the nodes (with parameters), and wires between them.
+Full documentation can be found at [readthedocs](http://quince.readthedocs.io/en/latest/)
 
 ## Dependencies ##
 
