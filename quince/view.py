@@ -224,7 +224,6 @@ class NodeScene(QGraphicsScene):
                 if stored_loc is not None and isinstance(stored_loc, QPointF):
                     new_node.setPos(stored_loc)
                 else:
-                    import ipdb; ipdb.set_trace()
                     new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
                 new_node.label.setPlainText(meas_name)
                 self.loaded_measure_nodes[meas_name] = new_node
