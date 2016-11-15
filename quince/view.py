@@ -361,18 +361,18 @@ class NodeScene(QGraphicsScene):
                 self.window.ignore_timer.start()
                 json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
-    def export(self, filename):
-        with open(filename, 'w') as df:
-            instr_nodes = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Instruments"]
-            meas_nodes  = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Filters" and i.name != "Stream Select X6"]
-            sweep_nodes = [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]
+    # def export(self, filename):
+    #     with open(filename, 'w') as df:
+    #         instr_nodes = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Instruments"]
+    #         meas_nodes  = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Filters" and i.name != "Stream Select X6"]
+    #         sweep_nodes = [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]
 
-            data = {}
-            data['CWMode'] = False
-            data['instruments']  = {n.label.toPlainText(): n.matlab_repr() for n in instr_nodes}
-            data['measurements'] = {n.label.toPlainText(): n.matlab_repr() for n in meas_nodes}
-            data['sweeps']       = {n.label.toPlainText(): n.matlab_repr() for n in sweep_nodes}
-            json.dump(data, df, sort_keys=True, indent=2, separators=(',', ': '))
+    #         data = {}
+    #         data['CWMode'] = False
+    #         data['instruments']  = {n.label.toPlainText(): n.matlab_repr() for n in instr_nodes}
+    #         data['measurements'] = {n.label.toPlainText(): n.matlab_repr() for n in meas_nodes}
+    #         data['sweeps']       = {n.label.toPlainText(): n.matlab_repr() for n in sweep_nodes}
+    #         json.dump(data, df, sort_keys=True, indent=2, separators=(',', ': '))
 
     def create_node_by_name(self, name):
         create_node_func_name = "create_"+("".join(name.split()))
@@ -456,15 +456,15 @@ class NodeWindow(QMainWindow):
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.save)
 
-        exportAction = QAction('&Export To Matlab', self)
-        exportAction.setShortcut('Shift+Ctrl+S')
-        exportAction.setStatusTip('Export To Matlab')
-        exportAction.triggered.connect(self.export)
+        # exportAction = QAction('&Export To Matlab', self)
+        # exportAction.setShortcut('Shift+Ctrl+S')
+        # exportAction.setStatusTip('Export To Matlab')
+        # exportAction.triggered.connect(self.export)
 
-        openAction = QAction('&Open', self)
-        openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip('Open')
-        openAction.triggered.connect(self.load)
+        # openAction = QAction('&Open', self)
+        # openAction.setShortcut('Ctrl+O')
+        # openAction.setStatusTip('Open')
+        # openAction.triggered.connect(self.load)
 
         selectAllAction = QAction('&Select All', self)
         selectAllAction.setShortcut('Ctrl+A')
@@ -494,9 +494,9 @@ class NodeWindow(QMainWindow):
         fileMenu = self.menuBar().addMenu('&File')
         editMenu = self.menuBar().addMenu('&Edit')
         helpMenu = self.menuBar().addMenu('&Help')
-        fileMenu.addAction(openAction)
+        # fileMenu.addAction(openAction)
         fileMenu.addAction(saveAction)
-        fileMenu.addAction(exportAction)
+        # fileMenu.addAction(exportAction)
         fileMenu.addAction(exitAction)
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
@@ -591,30 +591,30 @@ class NodeWindow(QMainWindow):
         self.set_status("Files changed on disk, reloading.")
         self.scene.reload_pyqlab()
 
-    def load(self):
-        # Load the last_dir setting if it exists, otherwise use the path to this file
-        path = self.settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
+    # def load(self):
+    #     # Load the last_dir setting if it exists, otherwise use the path to this file
+    #     path = self.scene.settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
 
-        fn = QFileDialog.getOpenFileName(self, 'Load Graph', path)
-        if fn[0] != '':
-            self.scene.load(fn[0])
+    #     fn = QFileDialog.getOpenFileName(self, 'Load Graph', path)
+    #     if fn[0] != '':
+    #         self.scene.load(fn[0])
 
-            # Push this directory to qsettings
-            self.settings.setValue("last_dir", QVariant(fn[0]))
+    #         # Push this directory to qsettings
+    #         self.scene.settings.setValue("last_dir", QVariant(fn[0]))
 
     def save(self):
         self.scene.save_for_pyqlab()
 
-    def export(self):
-        # Load the last_export_dir setting if it exists, otherwise use the path to this file
-        path = self.settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
+    # def export(self):
+    #     # Load the last_export_dir setting if it exists, otherwise use the path to this file
+    #     path = self.settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
         
-        fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
-        if fn[0] != '':
-            self.scene.export(fn[0])
+    #     fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
+    #     if fn[0] != '':
+    #         self.scene.export(fn[0])
 
-            # Push this directory to qsettings
-            self.settings.setValue("last_export_dir", QVariant(fn[0]))
+    #         # Push this directory to qsettings
+    #         self.settings.setValue("last_export_dir", QVariant(fn[0]))
 
     def select_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
