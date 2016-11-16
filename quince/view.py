@@ -195,7 +195,9 @@ class NodeScene(QGraphicsScene):
                         'DigitalDemod': 'Channelizer'}
 
         with open(self.window.measFile, 'r') as FID:
-            self.meas_settings = json.load(FID)["filterDict"]
+            settings = json.load(FID)
+            self.meas_settings = settings["filterDict"]
+            self.meas_settings_version = settings["version"]
 
         with open(self.window.instrFile, 'r') as FID:
             self.instr_settings = json.load(FID)["instrDict"]
@@ -251,11 +253,11 @@ class NodeScene(QGraphicsScene):
 
         for name, node in self.loaded_measure_nodes.items():
             meas_name = self.meas_settings[name]["label"]
-            
+
             # Get the source name. If it contains a colon, then the part before the colon
             # is the node name and the part after is the connector name. Otherwise, the
             # connector name is just "source" and the source name is the node name.
-            
+
             source = self.meas_settings[name]["data_source"].split(":")
             node_name = source[0]
             conn_name = "source"
@@ -274,7 +276,7 @@ class NodeScene(QGraphicsScene):
                         # Add to start node
                         new_wire.set_start(start_node.outputs[conn_name].scenePos())
                         start_node.outputs[conn_name].wires_out.append(new_wire)
-                        
+
                         # Add to end node
                         new_wire.end_obj = node.inputs['sink']
                         new_wire.set_end(node.inputs['sink'].scenePos())
@@ -283,7 +285,7 @@ class NodeScene(QGraphicsScene):
                         print("Could not find sink connector in", meas_name)
                 else:
                     print("Could not find source connector ", conn_name, "for node", node_name)
-            
+
             elif node_name in self.loaded_instr_nodes.keys():
                 start_node = self.loaded_instr_nodes[node_name]
                 if conn_name in start_node.outputs.keys():
@@ -296,7 +298,7 @@ class NodeScene(QGraphicsScene):
                         # Add to start node
                         new_wire.set_start(start_node.outputs[conn_name].scenePos())
                         start_node.outputs[conn_name].wires_out.append(new_wire)
-                        
+
                         # Add to end node
                         new_wire.end_obj = node.inputs['sink']
                         new_wire.set_end(node.inputs['sink'].scenePos())
@@ -347,19 +349,19 @@ class NodeScene(QGraphicsScene):
 
         if not hasattr(self, 'meas_settings'):
             self.window.set_status("Not launched from PyQLab, and therefore cannot save to PyQLab JSON.")
-        else:
-            with open(self.window.measFile, 'w') as df:
-                nodes  = [i for i in self.items() if isinstance(i, Node)]
+            return
+        with open(self.window.measFile, 'w') as df:
+            nodes  = [i for i in self.items() if isinstance(i, Node)]
 
-                data = {}
-                data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'MeasFilters'}
-                data["version"]     = 1
-                data["x__class__"]  = "MeasFilterLibrary"
-                data["x__module__"] = "MeasFilters"
+            data = {}
+            data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'MeasFilters'}
+            data["version"]     = self.meas_settings_version
+            data["x__class__"]  = "MeasFilterLibrary"
+            data["x__module__"] = "MeasFilters"
 
-                self.window.ignore_file_updates = True
-                self.window.ignore_timer.start()
-                json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
+            self.window.ignore_file_updates = True
+            self.window.ignore_timer.start()
+            json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
     # def export(self, filename):
     #     with open(filename, 'w') as df:
@@ -608,7 +610,7 @@ class NodeWindow(QMainWindow):
     # def export(self):
     #     # Load the last_export_dir setting if it exists, otherwise use the path to this file
     #     path = self.settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
-        
+
     #     fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
     #     if fn[0] != '':
     #         self.scene.export(fn[0])
