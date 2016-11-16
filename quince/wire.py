@@ -60,7 +60,6 @@ class Wire(QGraphicsPathItem):
                         self.scene().window.set_status("Can't connect {} connector to {}, only to {}.".format(self.start_obj.name, drop_site.name, self.start_obj.parent.allowed_destinations[self.start_obj.name]))
 
         elif isinstance(drop_site, Parameter):
-            print(self.start_obj.name)
             if self.start_obj.parent.name in ["Sweep", "Parameter"]:
                 
                 # Update the datatypes for sweep objects

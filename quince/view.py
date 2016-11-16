@@ -340,7 +340,10 @@ class NodeScene(QGraphicsScene):
             self.fade_timer.stop()
 
     def reload_pyqlab(self):
-        # Clear scene
+        # Don't retain any undo information, since it is outdated
+        self.undo_stack.clear()
+
+        # Reconstruct the scene
         nodes = [i for i in self.items() if isinstance(i, Node)]
         wires = [i for i in self.items() if isinstance(i, Wire)]
         for o in nodes+wires:
@@ -403,9 +406,11 @@ class NodeView(QGraphicsView):
     def keyPressEvent(self, event):
         if event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
             selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
-            for sn in selected_nodes:
-                sn.disconnect()
-                self.scene.removeItem(sn)
+            self.scene.undo_stack.push(CommandDeleteNodes(selected_nodes, self.scene))
+            # for sn in selected_nodes:
+                
+                # sn.disconnect()
+                # self.scene.removeItem(sn)
         else:
             return super(NodeView, self).keyPressEvent(event)
 
@@ -677,7 +682,7 @@ class NodeWindow(QMainWindow):
         selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
         old_to_new = {}
 
-        for sn in selected_nodes:
+        for sn in selected_nodes: 
             node_names = [i.label.toPlainText() for i in self.scene.items() if isinstance(i, Node)]
 
             new_node = self.scene.create_node_by_name(sn.name)

@@ -286,21 +286,6 @@ class Node(QGraphicsRectItem):
 
         return actual_delta
 
-    def disconnect(self):
-        for k, v in self.outputs.items():
-            for w in v.wires_out:
-                w.start_obj = None
-                self.scene().removeItem(w)
-        for k, v in self.inputs.items():
-            for w in v.wires_in:
-                w.end_obj = None
-                self.scene().removeItem(w)
-        for k, v in self.parameters.items():
-            for w in v.wires_in:
-                w.end_obj = None
-                self.scene().removeItem(w)
-        # self.scene().clear_wires(only_clear_orphaned=True)
-
     def create_wire(self, parent):
     	return Wire(parent)
 
@@ -475,3 +460,48 @@ class CommandAddNode(QUndoCommand):
         self.new_node = self.create_func()
     def undo(self):
         self.scene.removeItem(self.new_node)
+
+class CommandDeleteNodes(QUndoCommand):
+    def __init__(self, nodes, scene):
+        super(CommandDeleteNodes, self).__init__("Delete nodes {}".format(",".join([n.name for n in nodes])))
+        self.scene = scene
+        self.nodes = nodes
+    
+    def redo(self):
+        self.output_wires    = []
+        self.input_wires     = []
+        self.parameter_wires = []
+
+        for node in self.nodes:
+            for k, v in node.outputs.items():
+                for w in v.wires_out:
+                    w.end_obj.wires_in.pop(w.end_obj.wires_in.index(w))
+                    self.output_wires.append(w)
+                    self.scene.removeItem(w)
+            for k, v in node.inputs.items():
+                for w in v.wires_in:
+                    w.start_obj.wires_out.pop(w.start_obj.wires_out.index(w))
+                    self.input_wires.append(w)
+                    self.scene.removeItem(w)
+            for k, v in node.parameters.items():
+                for w in v.wires_in:
+                    w.end_obj.wires_in.pop(w.end_obj.wires_in.index(w))
+                    self.parameter_wires.append(w)
+                    self.scene.removeItem(w)
+            self.scene.removeItem(node)
+
+    def undo(self):
+        for node in self.nodes:
+            self.scene.addItem(node)
+        for w in self.output_wires:
+            w.end_obj.wires_in.append(w)
+            self.scene.addItem(w)
+        for w in self.input_wires:
+            w.start_obj.wires_out.append(w)
+            self.scene.addItem(w)
+        for w in self.parameter_wires:
+            w.end_obj.wires_in.append(w)
+            self.scene.addItem(w)
+        self.output_wires    = []
+        self.input_wires     = []
+        self.parameter_wires = []
