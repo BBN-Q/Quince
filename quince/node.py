@@ -70,10 +70,6 @@ class Node(QGraphicsRectItem):
         self.resize_handle = ResizeHandle(parent=self)
         self.resize_handle.setPos(self.rect().width()-8, self.rect().height()-8)
 
-        # Remove box
-        self.remove_box = RemoveBox(parent=self)
-        self.remove_box.setPos(self.rect().width()-13, 5)
-
         # Disable box
         self.disable_box = None
 
@@ -266,8 +262,6 @@ class Node(QGraphicsRectItem):
             self.resize_handle.setPos(self.rect().width()-8, self.rect().height()-8)
         if hasattr(self, 'title_bar'):
             self.title_bar.setRect(0,0,self.rect().width(),20)
-        if hasattr(self, 'remove_box'):
-            self.remove_box.setPos(self.rect().width()-13, 5)
 
         conn_delta = actual_delta.toPoint()
         conn_delta.setY(0.0)
@@ -393,23 +387,6 @@ class ResizeHandle(QGraphicsRectItem):
 
     def mouseReleaseEvent(self, event):
         self.dragging = False
-
-class RemoveBox(QGraphicsRectItem):
-    """docstring for RemoveBox"""
-    def __init__(self, parent=None):
-        super(RemoveBox, self).__init__(parent=parent)
-        self.parent = parent
-        self.setRect(0,0,10,10)
-        self.setBrush(QColor(60,60,60))
-        self.setPen(QPen(Qt.black, 1.0))
-        self.close_started = False
-    
-    def mousePressEvent(self, event):
-        self.close_started = True
-
-    def mouseReleaseEvent(self, event):
-        self.parent.disconnect()
-        self.scene().removeItem(self.parent)
 
 class CollapseBox(QGraphicsItem):
     """docstring for CollapseBox"""
