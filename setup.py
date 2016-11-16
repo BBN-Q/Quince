@@ -27,5 +27,6 @@ setup(
     long_description=open('README.md').read(),
     install_requires=[
         "Numpy >= 1.6.1",
+        "QtPy >= 1.1.2"
     ]
 )

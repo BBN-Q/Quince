@@ -4,9 +4,9 @@
 #
 # This file contains the sweep/parameter inspector descriptions
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
+from qtpy.QtGui import *
+from qtpy.QtCore import *
+from qtpy.QtWidgets import *
 
 class NodeListView(QListView):
     """List view with a node-centric model. Probably we'll 

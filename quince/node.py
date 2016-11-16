@@ -4,9 +4,9 @@
 #
 # This file contains the node descriptions
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
+from qtpy.QtGui import *
+from qtpy.QtCore import *
+from qtpy.QtWidgets import *
 
 from .wire import *
 
@@ -345,7 +345,7 @@ class Node(QGraphicsRectItem):
 
 class TitleText(QGraphicsTextItem):
     '''QGraphicsTextItem with textChanged() signal.'''
-    textChanged = pyqtSignal(str)
+    textChanged = Signal(str)
 
     def __init__(self, text, parent=None):
         super(TitleText, self).__init__(text, parent)

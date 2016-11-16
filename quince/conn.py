@@ -4,9 +4,9 @@
 #
 # This file contains the connector descriptions
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
+from qtpy.QtGui import *
+from qtpy.QtCore import *
+from qtpy.QtWidgets import *
 
 class Connector(QGraphicsEllipseItem):
     """docstring for Connector"""

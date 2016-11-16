@@ -4,9 +4,9 @@
 #
 # This file contains the wire descriptions
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
+from qtpy.QtGui import *
+from qtpy.QtCore import *
+from qtpy.QtWidgets import *
 
 from .conn import *
 from .param import *
