@@ -67,6 +67,8 @@ class NodeScene(QGraphicsScene):
 
         self.settings = QSettings("BBN", "Quince")
 
+        self.undo_stack = QUndoStack(self)
+
     def clear_wires(self, only_clear_orphaned=False):
         wires = [i for i in self.items() if isinstance(i, Wire)]
         for wire in wires:
@@ -165,7 +167,8 @@ class NodeScene(QGraphicsScene):
                 func = getattr(self, name)
 
                 # Connect trigger for action
-                action.triggered.connect(func)
+                create_command = lambda: self.undo_stack.push(CommandAddNode(name, func, self))
+                action.triggered.connect(create_command)
                 self.sub_menus[cat].addAction(action)
 
         path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "auspex-nodes")
@@ -481,6 +484,16 @@ class NodeWindow(QMainWindow):
         duplicateAction.setStatusTip('Duplicate')
         duplicateAction.triggered.connect(self.duplicate)
 
+        undoAction = QAction('&Undo', self)
+        undoAction.setShortcut('Ctrl+Z')
+        undoAction.setStatusTip('Undo')
+        undoAction.triggered.connect(self.undo)
+
+        redoAction = QAction('&Redo', self)
+        redoAction.setShortcut('Shift+Ctrl+Z')
+        redoAction.setStatusTip('Redo')
+        redoAction.triggered.connect(self.redo)
+
         fileMenu = self.menuBar().addMenu('&File')
         editMenu = self.menuBar().addMenu('&Edit')
         helpMenu = self.menuBar().addMenu('&Help')
@@ -493,6 +506,9 @@ class NodeWindow(QMainWindow):
         editMenu.addAction(collapseAllAction)
         editMenu.addAction(toggleEnabledAction)
         editMenu.addAction(duplicateAction)
+        editMenu.addSeparator()
+        editMenu.addAction(undoAction)
+        editMenu.addAction(redoAction)
 
         # Setup layout
         self.hbox = QHBoxLayout()
@@ -605,6 +621,12 @@ class NodeWindow(QMainWindow):
 
     #         # Push this directory to qsettings
     #         self.settings.setValue("last_export_dir", QVariant(fn[0]))
+
+    def undo(self):
+        self.scene.undo_stack.undo()
+
+    def redo(self):
+        self.scene.undo_stack.redo()
 
     def select_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]

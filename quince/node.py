@@ -465,3 +465,13 @@ class CollapseBox(QGraphicsItem):
             self.parent.change_collapsed_state(not self.parent.collapsed)
             self.setRotation(0.0 if self.parent.collapsed else 90.0)
         self.clicking = False
+
+class CommandAddNode(QUndoCommand):
+    def __init__(self, node_name, create_func, scene):
+        super(CommandAddNode, self).__init__("Add node {}".format(node_name))
+        self.create_func = create_func
+        self.scene = scene
+    def redo(self):
+        self.new_node = self.create_func()
+    def undo(self):
+        self.scene.removeItem(self.new_node)
