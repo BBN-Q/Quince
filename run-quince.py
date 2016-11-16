@@ -5,7 +5,7 @@
 #
 # This file runs the main loop
 
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 import sys
 import argparse
 
