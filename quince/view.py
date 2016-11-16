@@ -178,7 +178,7 @@ class NodeScene(QGraphicsScene):
         node_files = sorted(glob.glob(path+'/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
 
-        for cat in categories:
+        for cat in sorted(categories, key=lambda s: s.lower()):
             sm = self.menu.addMenu(cat)
             self.sub_menus[cat] = sm
 
@@ -186,6 +186,7 @@ class NodeScene(QGraphicsScene):
             parse_node_file(nf)
 
         # Now add the instruments
+        self.menu.addSeparator()
         self.instruments_menu = self.menu.addMenu("instruments")
         self.sub_menus["instruments"] = self.instruments_menu
 
@@ -193,7 +194,7 @@ class NodeScene(QGraphicsScene):
         node_files = sorted(glob.glob(path+'/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
 
-        for cat in categories:
+        for cat in sorted(categories, key=lambda s: s.lower()):
             sm = self.instruments_menu.addMenu(cat)
             self.sub_menus[cat] = sm
 
