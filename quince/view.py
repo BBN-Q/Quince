@@ -80,9 +80,12 @@ class NodeScene(QGraphicsScene):
             else:
                 self.removeItem(wire)
 
+    def open_add_menu(self, location):
+        self.menu.exec_(location)
+
     def contextMenuEvent(self, event):
         self.last_click = event.scenePos()
-        self.menu.exec_(event.screenPos())
+        self.open_add_menu(event.screenPos())
 
     def generate_menus(self):
         def parse_node_file(filename):
@@ -407,10 +410,8 @@ class NodeView(QGraphicsView):
         if event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
             selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
             self.scene.undo_stack.push(CommandDeleteNodes(selected_nodes, self.scene))
-            # for sn in selected_nodes:
-                
-                # sn.disconnect()
-                # self.scene.removeItem(sn)
+        elif event.key() == Qt.Key_A:
+            self.scene.open_add_menu(QCursor.pos())
         else:
             return super(NodeView, self).keyPressEvent(event)
 
@@ -453,16 +454,6 @@ class NodeWindow(QMainWindow):
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.save)
-
-        # exportAction = QAction('&Export To Matlab', self)
-        # exportAction.setShortcut('Shift+Ctrl+S')
-        # exportAction.setStatusTip('Export To Matlab')
-        # exportAction.triggered.connect(self.export)
-
-        # openAction = QAction('&Open', self)
-        # openAction.setShortcut('Ctrl+O')
-        # openAction.setStatusTip('Open')
-        # openAction.triggered.connect(self.load)
 
         selectAllAction = QAction('&Select All', self)
         selectAllAction.setShortcut('Ctrl+A')
@@ -602,30 +593,8 @@ class NodeWindow(QMainWindow):
         self.set_status("Files changed on disk, reloading.")
         self.scene.reload_pyqlab()
 
-    # def load(self):
-    #     # Load the last_dir setting if it exists, otherwise use the path to this file
-    #     path = self.scene.settings.value("last_dir", os.path.dirname(os.path.realpath(__file__))+"/examples")
-
-    #     fn = QFileDialog.getOpenFileName(self, 'Load Graph', path)
-    #     if fn[0] != '':
-    #         self.scene.load(fn[0])
-
-    #         # Push this directory to qsettings
-    #         self.scene.settings.setValue("last_dir", QVariant(fn[0]))
-
     def save(self):
         self.scene.save_for_pyqlab()
-
-    # def export(self):
-    #     # Load the last_export_dir setting if it exists, otherwise use the path to this file
-    #     path = self.settings.value("last_export_dir", os.path.dirname(os.path.realpath(__file__)))
-
-    #     fn = QFileDialog.getSaveFileName(self, 'Save Graph', path)
-    #     if fn[0] != '':
-    #         self.scene.export(fn[0])
-
-    #         # Push this directory to qsettings
-    #         self.settings.setValue("last_export_dir", QVariant(fn[0]))
 
     def undo(self):
         self.scene.undo_stack.undo()
