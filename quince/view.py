@@ -368,19 +368,6 @@ class NodeScene(QGraphicsScene):
             self.window.ignore_timer.start()
             json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
 
-    # def export(self, filename):
-    #     with open(filename, 'w') as df:
-    #         instr_nodes = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Instruments"]
-    #         meas_nodes  = [i for i in self.items() if isinstance(i, Node) and i.cat_name == "Filters" and i.name != "Stream Select X6"]
-    #         sweep_nodes = [i for i in self.items() if isinstance(i, Node) and i.name == "Sweep"]
-
-    #         data = {}
-    #         data['CWMode'] = False
-    #         data['instruments']  = {n.label.toPlainText(): n.matlab_repr() for n in instr_nodes}
-    #         data['measurements'] = {n.label.toPlainText(): n.matlab_repr() for n in meas_nodes}
-    #         data['sweeps']       = {n.label.toPlainText(): n.matlab_repr() for n in sweep_nodes}
-    #         json.dump(data, df, sort_keys=True, indent=2, separators=(',', ': '))
-
     def create_node_by_name(self, name):
         create_node_func_name = "create_"+("".join(name.split()))
         if hasattr(self, create_node_func_name):
@@ -392,12 +379,9 @@ class NodeScene(QGraphicsScene):
 
     def removeItem(self, item):
         super(NodeScene, self).removeItem(item)
-        # self.update_inspector_lists()
 
     def addItem(self, item):
         super(NodeScene, self).addItem(item)
-        # if isinstance(item, Node):
-            # self.update_inspector_lists()
 
 class NodeView(QGraphicsView):
     """docstring for NodeView"""
@@ -414,12 +398,11 @@ class NodeView(QGraphicsView):
         self.current_scale *= 1+change
 
     def keyPressEvent(self, event):
-        if (event.key() == Qt.Key_Delete) and (event.modifiers() == Qt.ControlModifier):
+        if event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
             selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
             for sn in selected_nodes:
                 sn.disconnect()
                 self.scene.removeItem(sn)
-            self.scene.clear_wires(only_clear_orphaned=True)
         else:
             return super(NodeView, self).keyPressEvent(event)
 

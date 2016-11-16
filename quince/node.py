@@ -290,13 +290,16 @@ class Node(QGraphicsRectItem):
         for k, v in self.outputs.items():
             for w in v.wires_out:
                 w.start_obj = None
+                self.scene().removeItem(w)
         for k, v in self.inputs.items():
             for w in v.wires_in:
                 w.end_obj = None
+                self.scene().removeItem(w)
         for k, v in self.parameters.items():
             for w in v.wires_in:
                 w.end_obj = None
-        self.scene().clear_wires(only_clear_orphaned=True)
+                self.scene().removeItem(w)
+        # self.scene().clear_wires(only_clear_orphaned=True)
 
     def create_wire(self, parent):
     	return Wire(parent)
