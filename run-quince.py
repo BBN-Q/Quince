@@ -24,8 +24,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(args.instrFile)
-
     app = QApplication([])
     window = NodeWindow()
     window.load_pyqlab(measFile=args.measFile, sweepFile=args.sweepFile, instrFile=args.instrFile)
