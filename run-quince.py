@@ -5,6 +5,10 @@
 #
 # This file runs the main loop
 
+# Use PyQt5 by default
+import os
+os.environ["QT_API"] = 'pyqt5'
+
 from qtpy.QtWidgets import QApplication
 import sys
 import argparse
