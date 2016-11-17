@@ -34,18 +34,28 @@ class Wire(QGraphicsPathItem):
         self.end_image.setPos(self.start)
 
         # Setup behavior for unlinking the end of the wire, monkeypatch!
-        self.end_image.mousePressEvent = lambda e: self.unhook(e)
-        self.end_image.mouseMoveEvent = lambda e: self.set_end(e.scenePos())
-        self.end_image.mouseReleaseEvent = lambda e: self.decide_drop(e)
+        def mpe(event):
+            self.unhook(event)
+        def mme(event):
+            self.set_end(event.scenePos())
+            exclude = list(self.start_obj.parent.inputs.values())
+            self.scene().connectors_nearby(event.scenePos(), exclude=exclude)
+        def mre(event):
+            exclude = list(self.start_obj.parent.inputs.values())
+            nearest = self.scene().connectors_nearby(event.scenePos(), exclude=exclude)
+            self.decide_drop(nearest)
+
+        self.end_image.mousePressEvent   = mpe
+        self.end_image.mouseMoveEvent    = mme
+        self.end_image.mouseReleaseEvent = mre
 
     def unhook(self, event):
         self.end_obj.wires_in.remove(self)
         self.start_obj.wires_out.remove(self)
         self.end_obj = None
 
-    def decide_drop(self, event):
+    def decide_drop(self, drop_site):
         self.setVisible(False)
-        drop_site = self.scene().itemAt(event.scenePos(), QTransform())
         success = True
 
         if isinstance(drop_site, Connector):
@@ -75,8 +85,10 @@ class Wire(QGraphicsPathItem):
         if success:
             self.set_end(drop_site.scenePos())
             self.end_obj = drop_site
+            self.end_obj.setRect(-5.0, -5.0, 10, 10)
             self.end_obj.wires_in.append(self)
             self.start_obj.wires_out.append(self)
+            self.make_path()
 
         self.setVisible(True)
         self.scene().clear_wires(only_clear_orphaned=True)
@@ -92,19 +104,23 @@ class Wire(QGraphicsPathItem):
 
     def make_path(self):
         self.path = QPainterPath()
-        self.path.moveTo(self.start.x()+5, self.start.y()+1)
+        self.path.moveTo(self.start.x()+7, self.start.y())
         halfway_x = self.start.x() + 0.5*(self.end.x()-self.start.x())
-        self.path.cubicTo(halfway_x, self.start.y(), halfway_x, self.end.y()+3, self.end.x(), self.end.y()+3)
-        self.path.lineTo(self.end.x(), self.end.y()-3)
-        self.path.cubicTo(halfway_x, self.end.y(), halfway_x, self.start.y()-3, self.start.x()+5, self.start.y()-1)
-        self.path.lineTo(self.start.x()+5, self.start.y()+1)
+        self.path.cubicTo(halfway_x, self.start.y(), halfway_x, self.end.y(), self.end.x(), self.end.y())
         self.setPath(self.path)
+        self.setBrush(QBrush(Qt.NoBrush))
 
-        linearGradient = QLinearGradient(self.start, self.end)
-        linearGradient.setColorAt(0, QColor(128, 128, 128))
-        linearGradient.setColorAt(1.0, Qt.white)
-        self.setBrush(QBrush(linearGradient))
-        self.setPen(QPen(QColor(128, 128, 128), 0.25))
+        linear_gradient = QLinearGradient(self.start, self.end)
+        linear_gradient.setColorAt(0, QColor(128, 128, 128))
+        if self.end_obj:
+            linear_gradient.setColorAt(1.0, QColor(180, 220, 220))
+            line_type = Qt.SolidLine
+        else:
+            linear_gradient.setColorAt(1.0, QColor(220, 220, 180))
+            line_type = Qt.DashLine
+        
+        self.setPen(QPen(QBrush(linear_gradient), 4.0, line_type, Qt.RoundCap))
+
 
     def dict_repr(self):
         dat = {}

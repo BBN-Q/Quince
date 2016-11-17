@@ -48,7 +48,10 @@ class Connector(QGraphicsEllipseItem):
     def mouseMoveEvent(self, event):
         if self.temp_wire is not None:
             self.temp_wire.set_end(event.scenePos())
+            exclude = list(self.parent.inputs.values())
+            self.scene().connectors_nearby(event.scenePos(), exclude=exclude)
 
     def mouseReleaseEvent(self, event):
-        self.temp_wire.decide_drop(event)
-        self.scene().clear_wires(only_clear_orphaned=True)
+        exclude = list(self.parent.inputs.values())
+        nearest = self.scene().connectors_nearby(event.scenePos(), exclude=exclude)
+        self.temp_wire.decide_drop(nearest)

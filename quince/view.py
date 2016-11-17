@@ -69,6 +69,27 @@ class NodeScene(QGraphicsScene):
 
         self.undo_stack = QUndoStack(self)
 
+    def connectors_nearby(self, position, exclude=[]):
+        connectors = [i for i in self.items() if isinstance(i, Connector)
+                                              and i.connector_type == 'input'
+                                              and i not in exclude]
+        rs = {}
+        for i, conn in enumerate(connectors):
+            p = (position - conn.scenePos())
+            r = np.sqrt(p.x()*p.x() + p.y()*p.y())
+            if r < 30.0:
+                rs[conn] = r
+                scale = 1.0+3.0/(r+0.2)
+                if scale > 1.5:
+                    scale = 1.5
+                conn.setRect(-5.0*scale, -5.0*scale, 10*scale, 10*scale)
+            else:
+                conn.setRect(-5.0, -5.0, 10, 10)
+        if len(rs) > 0:
+            return sorted(rs, key=rs.get)[0]
+        else:
+            return None
+
     def clear_wires(self, only_clear_orphaned=False):
         wires = [i for i in self.items() if isinstance(i, Wire)]
         for wire in wires:
