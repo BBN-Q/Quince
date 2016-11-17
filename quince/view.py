@@ -411,8 +411,6 @@ class NodeView(QGraphicsView):
         if event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
             selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
             self.scene.undo_stack.push(CommandDeleteNodes(selected_nodes, self.scene))
-        elif event.key() == Qt.Key_A:
-            self.scene.open_add_menu(QCursor.pos())
         else:
             return super(NodeView, self).keyPressEvent(event)
 
