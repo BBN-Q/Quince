@@ -29,11 +29,11 @@ class Connector(QGraphicsEllipseItem):
         if self.connector_type == 'output':
             self.label.setPos(-5-self.label.boundingRect().topRight().x(),-10)      
             self.setBrush(Qt.white)
-            self.setPen(Qt.blue)
+            self.setPen(QColor(50,50,50))
         else:
             self.label.setPos(5,-10)      
             self.setBrush(Qt.white)
-            self.setPen(Qt.blue)
+            self.setPen(QColor(50,50,50))
 
     def width(self):
         return self.label.boundingRect().topRight().x()

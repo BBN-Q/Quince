@@ -38,6 +38,13 @@ class Node(QGraphicsRectItem):
         self.label = TitleText(self.name, parent=self)
         self.label.setDefaultTextColor(Qt.white)
 
+        # Glossy flair
+        shiny_part = QGraphicsPolygonItem(QPolygonF([QPointF(0,0), QPointF(120,0), QPointF(0,8)]),
+                                          parent=self)
+        shiny_part.setBrush(QBrush(QColor(200,200,250,50)))
+        shiny_part.setPen(QPen(Qt.NoPen))
+
+
         # Enabled by default
         self.enabled = True
 
@@ -48,11 +55,11 @@ class Node(QGraphicsRectItem):
         # Any additional json we should retain from PyQLab
         self.base_params = None
 
-        if self.label.boundingRect().topRight().x() > 80:
+        if self.label.boundingRect().topRight().x() > 120:
             self.min_width = self.label.boundingRect().topRight().x()+20
             self.setRect(0,0,self.label.boundingRect().topRight().x()+20,30)
         else:
-            self.min_width = 80.0
+            self.min_width = 120.0
 
         self.min_height = 30
 
@@ -481,6 +488,8 @@ class CommandDeleteNodes(QUndoCommand):
                     self.parameter_wires.append(w)
                     self.scene.removeItem(w)
             self.scene.removeItem(node)
+            node.update()
+        self.scene.update()
 
     def undo(self):
         for node in self.nodes:
@@ -497,3 +506,4 @@ class CommandDeleteNodes(QUndoCommand):
         self.output_wires    = []
         self.input_wires     = []
         self.parameter_wires = []
+        self.scene.update()
