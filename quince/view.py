@@ -419,16 +419,20 @@ class NodeView(QGraphicsView):
             self.setDragMode(QGraphicsView.ScrollHandDrag)
             fake = QMouseEvent(event.type(), event.pos(), Qt.LeftButton, Qt.LeftButton, event.modifiers())
             return super(NodeView, self).mousePressEvent(fake)
-        else:
-            return super(NodeView, self).mousePressEvent(event)
+        elif event.button() == Qt.LeftButton:
+            self.setDragMode(QGraphicsView.RubberBandDrag)
+        return super(NodeView, self).mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         if (event.button() == Qt.MidButton) or (event.button() == Qt.LeftButton and event.modifiers() == Qt.ShiftModifier):
             self.setDragMode(QGraphicsView.NoDrag)
             fake = QMouseEvent(event.type(), event.pos(), Qt.LeftButton, Qt.LeftButton, event.modifiers())
             return super(NodeView, self).mouseReleaseEvent(fake)
-        else:
-            return super(NodeView, self).mouseReleaseEvent(event)
+        elif event.button() == Qt.LeftButton:
+            a = super(NodeView, self).mouseReleaseEvent(event)
+            self.setDragMode(QGraphicsView.NoDrag)
+            return a
+        return super(NodeView, self).mouseReleaseEvent(event)
 
 class NodeWindow(QMainWindow):
     """docstring for NodeWindow"""
