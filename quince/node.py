@@ -26,20 +26,15 @@ class Node(QGraphicsRectItem):
         self.parameter_order = {}
         self.collapsed = False
 
-        self.bg_color = QColor(240,240,240)
-        self.edge_color = QColor(200,200,200)
-        self.edge_color_selected = QColor(247,217,17)
+        self.bg_color   = self.default_bg_color   = QColor(240,240,240,235)
+        self.edge_color = self.default_edge_color = QColor(200,200,200)
+        self.edge_thick = 0.75
         self.setRect(0,0,100,30)
-        self.setBrush(QBrush(self.bg_color))
-        self.setPen(QPen(QColor(200,200,200), 0.75))
 
         # Title bar
         self.title_bar = QGraphicsRectItem(parent=self)
         self.title_bar.setRect(0,0,100,20)
-        self.title_color = QColor(80,80,100)
-        self.title_color_selected = QColor(110,110,80)
-        self.title_bar.setBrush(QBrush(self.title_color))
-        self.title_bar.setPen(QPen(QColor(200,200,200), 0.75))
+        self.title_color = self.default_title_color = QColor(80,80,100)
         self.label = TitleText(self.name, parent=self)
         self.label.setDefaultTextColor(Qt.white)
 
@@ -78,6 +73,16 @@ class Node(QGraphicsRectItem):
 
         # Synchronizing parameters
         self.changing = False
+
+        # Render a nice Drop Shadow
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(18.0)
+        shadow.setOffset(0.0, 10.0)
+        shadow.setColor(QColor("#99121212"))
+        self.setGraphicsEffect(shadow)
+
+        # Set up hovering
+        self.setAcceptHoverEvents(True)
    
     @property
     def enabled(self):
@@ -86,11 +91,23 @@ class Node(QGraphicsRectItem):
     def enabled(self, value):
         self._enabled = value
         if value:
-            self.bg_color = QColor(240,240,240)
+            self.bg_color = self.default_bg_color
             self.title_color = QColor(80,80,100)
         else:
             self.bg_color = QColor(140,140,140)
             self.title_color = QColor(100,100,100)
+        self.update()
+
+    def hoverEnterEvent(self, event):
+        self.prev_edge_color = self.edge_color
+        self.prev_edge_thick = self.edge_thick
+        self.edge_color = QColor(247,247,247)
+        self.edge_thick = 1.5
+        self.update()
+
+    def hoverLeaveEvent(self, event):
+        self.edge_color = self.prev_edge_color
+        self.edge_thick = self.prev_edge_thick
         self.update()
 
     def update_min_width(self):
@@ -117,14 +134,6 @@ class Node(QGraphicsRectItem):
             else:
                 self.parameters['Incr.'].set_value((stop-start)/steps)
         self.changing = False
-
-    def set_title_color(self, color):
-        self.title_color = color
-        self.title_bar.setBrush(QBrush(color))
-
-    def set_bg_color(self, color):
-        self.bg_color = color
-        self.setBrush(QBrush(color))
 
     def add_output(self, connector):
         connector.setParentItem(self)
@@ -240,6 +249,17 @@ class Node(QGraphicsRectItem):
             for k, v in self.parameters.items():
                 for w in v.wires_in:
                     w.set_end(v.pos()+value)
+        elif change == QGraphicsItem.ItemSelectedChange:
+            if value:
+                self.edge_color = QColor(247,217,17)
+                self.edge_thick = 1.25
+                self.title_color = QColor(110,110,80)
+                self.prev_edge_color = self.edge_color
+                self.prev_edge_thick = self.edge_thick
+            else:
+                self.edge_color = self.default_edge_color
+                self.edge_thick = 0.75
+                self.title_color = self.default_title_color
         return QGraphicsRectItem.itemChange(self, change, value)
 
     def itemResize(self, delta):
@@ -284,14 +304,9 @@ class Node(QGraphicsRectItem):
     	return Wire(parent)
 
     def paint(self, painter, options, widget):
-        if self.isSelected():
-            painter.setPen(QPen(self.edge_color_selected, 1.25))
-            self.title_bar.setPen(QPen(self.edge_color_selected, 1.25))
-            self.title_bar.setBrush(QBrush(self.title_color_selected))
-        else:
-            painter.setPen(QPen(self.edge_color, 0.75))
-            self.title_bar.setPen(QPen(self.edge_color, 0.75))
-            self.title_bar.setBrush(QBrush(self.title_color))
+        painter.setPen(QPen(self.edge_color, self.edge_thick))
+        self.title_bar.setPen(QPen(self.edge_color, self.edge_thick))
+        self.title_bar.setBrush(QBrush(self.title_color))
         painter.setBrush(QBrush(self.bg_color))
         painter.drawRoundedRect(self.rect(), 5.0, 5.0)
 
