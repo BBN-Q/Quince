@@ -90,6 +90,28 @@ class NodeScene(QGraphicsScene):
         else:
             return None
 
+    def mouseMoveEvent(self, event):
+        self.crowded_connectors_nearby(event.scenePos())
+        return super(NodeScene, self).mouseMoveEvent(event)
+
+    def crowded_connectors_nearby(self, position):
+        conns = [i for i in self.items() if isinstance(i, Connector)]
+        for conn in conns:
+            if conn.connector_type == 'input' and len(conn.wires_in) > 1:
+                p = (position - conn.scenePos())
+                r = np.sqrt(p.x()*p.x() + p.y()*p.y())
+                if r < 20.0:
+                    wires = sorted(conn.wires_in, key=lambda c: c.start_obj.parent.y())
+                    start = np.pi/6.0
+                    norm_fac = (np.pi-2*start)/(len(wires)-1)
+                    for j, wire in enumerate(wires):
+                        offset = QPointF(-15*np.sin(start + j*norm_fac), -15*np.cos(start + j*norm_fac))
+                        wire.set_end(wire.end_obj.scenePos() + offset)
+                else:
+                    for wire in conn.wires_in:
+                        wire.set_end(wire.end_obj.scenePos())
+
+
     def clear_wires(self, only_clear_orphaned=False):
         wires = [i for i in self.items() if isinstance(i, Wire)]
         for wire in wires:
