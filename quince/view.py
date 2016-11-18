@@ -142,19 +142,15 @@ class NodeScene(QGraphicsScene):
                         if 'default' in p.keys():
                             pp.set_value(p['default'])
 
-                        # Generally, combo, bool, file parameters have no input connectors
-                        if p['type'] in ['combo', 'boolean', 'filename']:
-                            pp.has_input = False
+                        pp.has_input = False
 
-                        # If the has_input value is set in the json, pay attention
-                        if 'has_input' in p.keys():
-                            pp.has_input = p['has_input']
+                        # # Generally, combo, bool, file parameters have no input connectors
+                        # if p['type'] in ['combo', 'boolean', 'filename']:
+                        #     pp.has_input = False
 
-                        # For matlab export, we need the matlab names and categories
-                        if 'matlab_name' in p.keys():
-                            pp.matlab_name = p['matlab_name']
-                        if 'matlab_cat' in p.keys():
-                            pp.matlab_cat = p['matlab_cat']
+                        # # If the has_input value is set in the json, pay attention
+                        # if 'has_input' in p.keys():
+                        #     pp.has_input = p['has_input']
 
                         # Special parameters cannot be directly edited
                         if 'interactive' in p.keys():

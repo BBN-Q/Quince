@@ -53,10 +53,17 @@ for mod_name, mod in filter_modules.items():
 		j["name"] =  n
 		j["outputs"] = f._output_connectors
 		j["inputs"] = f._input_connectors
-		j["parameters"] = []
+		
+		# Instantiate and construct parameters
+		# params = [qp.dict_repr() for qp in f().quince_parameters]
+		# inst = f()
+		# for qp in inst.quince_parameters:
+		# 	params.append(qp.dict_repr())
+
+		j["parameters"] = [qp.dict_repr() for qp in f().quince_parameters]
 		j["x__class__"] = n
 		j["x__module__"] = "MeasFilters"
-
+		print(j["parameters"])
 		with open("{}/{}.json".format(mod_name, n), 'w') as f:
 			json.dump(j, f, sort_keys=True, indent=4, separators=(',', ': '))
 

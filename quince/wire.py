@@ -30,7 +30,7 @@ class Wire(QGraphicsPathItem):
         # Add endpoint circle
         rad = 5
         self.end_image = QGraphicsEllipseItem(-rad, -rad, 2*rad, 2*rad, parent=self)
-        self.end_image.setBrush(Qt.white)
+        self.end_image.setBrush(QColor(130, 170, 170))
         self.end_image.setPos(self.start)
 
         # Setup behavior for unlinking the end of the wire, monkeypatch!
