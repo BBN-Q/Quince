@@ -285,8 +285,11 @@ class StringBox(QGraphicsRectItem):
 
     def paint(self, painter, options, widget):
         # Background object is a rounded rectangle
+        linear_gradient = QLinearGradient(self.rect().topLeft(),  self.rect().bottomLeft())
+        linear_gradient.setColorAt(0, QColor(150,150,150))
+        linear_gradient.setColorAt(1, QColor(200,200,200))
         painter.RenderHint(QPainter.Antialiasing)
-        painter.setBrush(QBrush(QColor(220,220,220)))
+        painter.setBrush(QBrush(linear_gradient))
         painter.setPen(QPen(QColor(200,200,200), 0.75))
         painter.drawRoundedRect(self.rect(), self.rect_radius, self.rect_radius)
 
