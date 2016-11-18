@@ -156,17 +156,33 @@ class SliderBox(QGraphicsRectItem):
 
     def paint(self, painter, options, widget):
         # Background object is a rounded rectangle
+        linear_gradient = QLinearGradient(self.rect().topLeft(),  self.rect().bottomLeft())
+        linear_gradient.setColorAt(0, QColor(150,150,150))
+        linear_gradient.setColorAt(1, QColor(200,200,200))
         painter.RenderHint(QPainter.Antialiasing)
-        painter.setBrush(QBrush(QColor(220,220,220)))
+        painter.setBrush(QBrush(linear_gradient))
         painter.setPen(QPen(QColor(200,200,200), 0.75))
         painter.drawRoundedRect(self.rect(), self.rect_radius, self.rect_radius)
 
         # Draw the bar using a round capped line
-        painter.setPen(QPen(QColor(160,200,220), self.height, cap=Qt.RoundCap))
+        linear_gradient = QLinearGradient(self.rect().topLeft(),  self.rect().topRight())
+        linear_gradient.setColorAt(0, QColor(180,180,220))
+        linear_gradient.setColorAt(1, QColor(80,80,100))
+        painter.setPen(QPen(QBrush(linear_gradient), 0.9*self.height, Qt.SolidLine, Qt.RoundCap))
         path = QPainterPath()
         path.moveTo(3+self.rect_radius, 15 + 0.5*self.height)
         fill_size = (self.rect().width()-2*self.rect_radius)*(self._value-self.min_value)/(self.max_value-self.min_value)
         path.lineTo(3+self.rect_radius+fill_size, 7.5 + 0.5+self.height)
+        painter.drawPath(path)
+
+        # Draw the highlight line similarly
+        linear_gradient = QLinearGradient(self.rect().topLeft(), self.rect().bottomLeft())
+        linear_gradient.setColorAt(0, QColor(240,240,240,150))
+        linear_gradient.setColorAt(0.3, QColor(240,240,240,00))
+        painter.setPen(QPen(QBrush(linear_gradient), 0.9*self.height, Qt.SolidLine, Qt.RoundCap))
+        path = QPainterPath()
+        path.moveTo(3+self.rect_radius, 15.0 + 0.5*self.height)
+        path.lineTo(3+self.rect_radius+fill_size, 15.0 + 0.5*self.height)
         painter.drawPath(path)
 
     def valueFromText(self, text):
