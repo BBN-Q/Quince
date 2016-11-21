@@ -64,6 +64,14 @@ class NodeScene(QGraphicsScene):
 
         self.undo_stack = QUndoStack(self)
 
+        self.update_screen()
+
+    def update_screen(self):
+        if hasattr(self.window, 'view'):
+            dpr = self.window.devicePixelRatio()
+            nodes = [i for i in self.items() if isinstance(i, Node)]
+            _ = [n.update_screen(dpr) for n in nodes]
+
     def connectors_nearby(self, position, exclude=[]):
         connectors = [i for i in self.items() if isinstance(i, Connector)
                                               and i.connector_type == 'input'
@@ -129,7 +137,7 @@ class NodeScene(QGraphicsScene):
 
                 # Create function for dropping node on canvas
                 def create(the_data, cat_name):
-                    node = Node(the_data['name'])
+                    node = Node(the_data['name'], self)
                     node.cat_name = cat_name
                     for op in the_data['outputs']:
                         node.add_output(Connector(op, 'output'))

@@ -12,9 +12,10 @@ from .wire import *
 
 class Node(QGraphicsRectItem):
     """docstring for Node"""
-    def __init__(self, name, parent=None):
+    def __init__(self, name, scene, parent=None):
         super(Node, self).__init__(parent=parent)
         self.name = name
+        self.scene = scene
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -81,16 +82,20 @@ class Node(QGraphicsRectItem):
         # Synchronizing parameters
         self.changing = False
 
-        # Render a nice Drop Shadow
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(18.0)
-        shadow.setOffset(0.0, 10.0)
-        shadow.setColor(QColor("#99121212"))
-        self.setGraphicsEffect(shadow)
-
         # Set up hovering
         self.setAcceptHoverEvents(True)
+
+        self.update_screen(self.scene.window.devicePixelRatio())
    
+    def update_screen(self, pixel_ratio):
+        if pixel_ratio < 2:
+            # Render a nice Drop Shadow
+            shadow = QGraphicsDropShadowEffect()
+            shadow.setBlurRadius(18.0)
+            shadow.setOffset(0.0, 10.0)
+            shadow.setColor(QColor("#99121212"))
+            self.setGraphicsEffect(shadow)
+
     @property
     def enabled(self):
         return self._enabled
