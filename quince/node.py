@@ -359,6 +359,7 @@ class TitleText(QGraphicsTextItem):
     def __init__(self, text, parent=None):
         super(TitleText, self).__init__(text, parent)
         self.setTextInteractionFlags(Qt.TextEditorInteraction)
+        self.setFlag(QGraphicsItem.ItemIsFocusable)
         self._value = text
         self.parent = parent
 
@@ -378,9 +379,14 @@ class TitleText(QGraphicsTextItem):
         
         super(TitleText, self).setPlainText(self._value)
 
-    def focusOutEvent (self, event):
+    def focusOutEvent(self, event):
         self.setPlainText(self.toPlainText())
         super(TitleText, self).focusOutEvent(event)
+        self.clearFocus()
+
+    def focusInEvent(self, event):
+        super(TitleText, self).focusInEvent(event)
+        self.setFocus()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:

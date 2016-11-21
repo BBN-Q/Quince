@@ -443,7 +443,7 @@ class NodeView(QGraphicsView):
         self.current_scale *= 1+change
 
     def keyPressEvent(self, event):
-        if event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
+        if not self.scene.focusItem() and event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
             selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]
             self.scene.undo_stack.push(CommandDeleteNodes(selected_nodes, self.scene))
         else:
