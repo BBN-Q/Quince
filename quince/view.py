@@ -528,6 +528,11 @@ class NodeWindow(QMainWindow):
         redoAction.setStatusTip('Redo')
         redoAction.triggered.connect(self.redo)
 
+        debugAction = QAction('&Debug', self)
+        debugAction.setShortcut('Shift+Ctrl+Alt+D')
+        debugAction.setStatusTip('Debug!')
+        debugAction.triggered.connect(self.debug)
+
         fileMenu = self.menuBar().addMenu('&File')
         editMenu = self.menuBar().addMenu('&Edit')
         helpMenu = self.menuBar().addMenu('&Help')
@@ -535,6 +540,7 @@ class NodeWindow(QMainWindow):
         fileMenu.addAction(saveAction)
         # fileMenu.addAction(exportAction)
         fileMenu.addAction(exitAction)
+
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
         editMenu.addAction(collapseAllAction)
@@ -543,6 +549,8 @@ class NodeWindow(QMainWindow):
         editMenu.addSeparator()
         editMenu.addAction(undoAction)
         editMenu.addAction(redoAction)
+
+        helpMenu.addAction(debugAction)
 
         # Setup layout
         self.hbox = QHBoxLayout()
@@ -575,8 +583,17 @@ class NodeWindow(QMainWindow):
         self.svg_animation.setEndValue(0.0)
         self.svg_animation.start()
 
+        # Try to check on screen changes...
+    def moveEvent(self, event):
+        self.scene.update_screen()
+        return super(NodeWindow, self).moveEvent(event)
+
+
     def set_status(self, text, time=2000):
         self.status_bar.showMessage(text, time)
+
+    def debug(self):
+        import ipdb; ipdb.set_trace()
 
     def load_pyqlab(self, measFile=None, sweepFile=None, instrFile=None):
         if None in [measFile, sweepFile, instrFile]:
