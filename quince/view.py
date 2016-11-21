@@ -100,17 +100,10 @@ class NodeScene(QGraphicsScene):
             if conn.connector_type == 'input' and len(conn.wires_in) > 1:
                 p = (position - conn.scenePos())
                 r = np.sqrt(p.x()*p.x() + p.y()*p.y())
-                if r < 20.0:
-                    wires = sorted(conn.wires_in, key=lambda c: c.start_obj.parent.y())
-                    start = np.pi/6.0
-                    norm_fac = (np.pi-2*start)/(len(wires)-1)
-                    for j, wire in enumerate(wires):
-                        offset = QPointF(-15*np.sin(start + j*norm_fac), -15*np.cos(start + j*norm_fac))
-                        wire.set_end(wire.end_obj.scenePos() + offset)
+                if r < 30.0:
+                    conn.explode_wires()
                 else:
-                    for wire in conn.wires_in:
-                        wire.set_end(wire.end_obj.scenePos())
-
+                    conn.implode_wires()
 
     def clear_wires(self, only_clear_orphaned=False):
         wires = [i for i in self.items() if isinstance(i, Wire)]

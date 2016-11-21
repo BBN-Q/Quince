@@ -4,6 +4,9 @@
 #
 # This file contains utility functions for quince
 
+from qtpy.QtGui import *
+from qtpy.QtCore import *
+from qtpy.QtWidgets import *
 import re
 
 def next_available_name(node_names, label):
@@ -26,3 +29,14 @@ def strip_numbers(label):
 	except:
 		stripped = label
 	return stripped
+
+class dummy_object_QPointF(QObject):
+	"""Fake object for animation purposes"""
+	def __init__(self, getter, setter):
+		super(dummy_object_QPointF, self).__init__()
+		self.getter, self.setter = getter, setter
+	def dummy_get(self):
+		return self.getter()
+	def dummy_set(self, value):
+		self.setter(value)
+	dummy = Property(QPointF, dummy_get, dummy_set) 
