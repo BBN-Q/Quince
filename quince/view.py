@@ -4,11 +4,6 @@
 #
 # This file contains the windows, view, and scene descriptions
 
-# from PyQt5.QtGui import *
-# from PyQt5.QtCore import *
-# from PyQt5.QtSvg import *
-# from PyQt5.QtWidgets import *
-
 from qtpy.QtGui import *
 from qtpy.QtCore import *
 from qtpy.QtSvg import *

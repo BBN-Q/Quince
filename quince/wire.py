@@ -83,12 +83,7 @@ class Wire(QGraphicsPathItem):
             success = False
 
         if success:
-            self.set_end(drop_site.scenePos())
-            self.end_obj = drop_site
-            self.end_obj.setRect(-5.0, -5.0, 10, 10)
-            self.end_obj.wires_in.append(self)
-            self.start_obj.wires_out.append(self)
-            self.make_path()
+            self.scene().undo_stack.push(CommandConnectWire(self, drop_site, self.scene()))
 
         self.setVisible(True)
         self.scene().clear_wires(only_clear_orphaned=True)
@@ -127,3 +122,25 @@ class Wire(QGraphicsPathItem):
         dat['start'] = {'node': self.start_obj.parent.label.toPlainText(), 'connector_name': self.start_obj.name}
         dat['end'] = {'node': self.end_obj.parent.label.toPlainText(), 'connector_name': self.end_obj.name}
         return dat
+
+class CommandConnectWire(QUndoCommand):
+    def __init__(self, wire, drop_site, scene):
+        super(CommandConnectWire, self).__init__("Connect wire {}".format(wire))
+        self.wire = wire
+        self.scene = scene
+        self.drop_site = drop_site
+
+    def redo(self):
+        if self.wire not in self.scene.items():
+            self.scene.addItem(self.wire)
+        self.wire.set_end(self.drop_site.scenePos())
+        self.wire.end_obj = self.drop_site
+        self.wire.end_obj.setRect(-5.0, -5.0, 10, 10)
+        self.wire.end_obj.wires_in.append(self.wire)
+        self.wire.start_obj.wires_out.append(self.wire)
+        self.wire.make_path()
+
+    def undo(self):
+        self.wire.end_obj.wires_in.pop(self.wire.end_obj.wires_in.index(self.wire))
+        self.wire.start_obj.wires_out.pop(self.wire.start_obj.wires_out.index(self.wire))
+        self.scene.removeItem(self.wire)
