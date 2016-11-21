@@ -565,6 +565,7 @@ class NodeWindow(QMainWindow):
 
         svg_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets/quince.svg")
         svgrend = QSvgRenderer(svg_path)
+
         self.svgitem = QGraphicsSvgItem()
         self.svgitem.setSharedRenderer(svgrend)
         self.scene.addItem(self.svgitem)
@@ -572,25 +573,14 @@ class NodeWindow(QMainWindow):
         self.svgitem.setPos(self.svgitem.pos().x()-self.svgitem.boundingRect().width()/4,
                             self.svgitem.pos().y()-self.svgitem.boundingRect().height()/4)
 
-        self.draw_i = 0
-        self.increment = 15
-        self.duration = 1600
-
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.advance)
-        self.timer.start(self.increment)
+        self.svg_animation = QPropertyAnimation(self.svgitem, bytes("opacity".encode("ascii")))
+        self.svg_animation.setDuration(2000)
+        self.svg_animation.setStartValue(1.0)
+        self.svg_animation.setEndValue(0.0)
+        self.svg_animation.start()
 
     def set_status(self, text, time=2000):
         self.status_bar.showMessage(text, time)
-
-    def advance(self):
-        if self.draw_i < self.duration:
-            self.svgitem.setOpacity(1.0-float(self.draw_i)/self.duration)
-            self.draw_i += self.increment
-            # self.increment += 0.1
-        else:
-            self.timer.stop()
-            self.scene.removeItem(self.svgitem)
 
     def load_pyqlab(self, measFile=None, sweepFile=None, instrFile=None):
         if None in [measFile, sweepFile, instrFile]:
