@@ -31,6 +31,127 @@ except:
     no_auspex = True
     print("Could not locate auspex in the python path. Will only load json nodes.")
 
+def load_from_pyqlab(graphics_view):
+
+    name_changes = {'KernelIntegration': 'KernelIntegrator',
+                    'DigitalDemod': 'Channelizer'}
+
+    with open(graphics_view.window.measFile, 'r') as FID:
+        settings = json.load(FID)
+        graphics_view.meas_settings = settings["filterDict"]
+        graphics_view.meas_settings_version = settings["version"]
+
+    with open(graphics_view.window.instrFile, 'r') as FID:
+        graphics_view.instr_settings = json.load(FID)["instrDict"]
+
+    with open(graphics_view.window.sweepFile, 'r') as FID:
+        graphics_view.sweep_settings = json.load(FID)["sweepDict"]
+
+    graphics_view.loaded_measure_nodes = {} # Keep track of nodes we create
+    graphics_view.loaded_instr_nodes = {} # Keep track of nodes we create
+
+    # Create and place the filters
+    for meas_par in graphics_view.meas_settings.values():
+
+        meas_name = meas_par["label"]
+        meas_type = meas_par["x__class__"]
+        # Perform some translation
+        if meas_type in name_changes.keys():
+            meas_type = name_changes[meas_type]
+        # See if the filter exists, and then create it
+        if hasattr(graphics_view, 'create_'+meas_type):
+            new_node = getattr(graphics_view, 'create_'+meas_type)()
+            new_node.enabled = meas_par['enabled']
+            new_node.base_params = meas_par
+            new_node.setOpacity(0.0)
+            stored_loc = graphics_view.settings.value("node_positions/" + meas_name + "_pos")
+            if stored_loc is not None and isinstance(stored_loc, QPointF):
+                new_node.setPos(stored_loc)
+            else:
+                new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+            new_node.label.setPlainText(meas_name)
+            graphics_view.loaded_measure_nodes[meas_name] = new_node
+
+    # Create and place the instruments
+    for instr_par in graphics_view.instr_settings.values():
+        instr_name = instr_par["label"]
+        instr_type = instr_par["x__class__"]
+        # Perform some translation
+        if instr_type in name_changes.keys():
+            instr_type = name_changes[instr_type]
+        # See if the filter exists, and then create it
+        if hasattr(graphics_view, 'create_'+instr_type):
+            new_node = getattr(graphics_view, 'create_'+instr_type)()
+            new_node.enabled = instr_par['enabled']
+            new_node.base_params = instr_par
+            new_node.setOpacity(0.0)
+            stored_loc = graphics_view.settings.value("node_positions/" + instr_name + "_pos")
+            if stored_loc is not None:
+                new_node.setPos(stored_loc)
+            else:
+                new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+            new_node.label.setPlainText(instr_name)
+            graphics_view.loaded_instr_nodes[instr_name] = new_node
+
+    for name, node in graphics_view.loaded_measure_nodes.items():
+        meas_name = graphics_view.meas_settings[name]["label"]
+
+        # Get the source name. If it contains a colon, then the part before the colon
+        # is the node name and the part after is the connector name. Otherwise, the
+        # connector name is just "source" and the source name is the node name.
+
+        source = graphics_view.meas_settings[name]["data_source"].split(":")
+        node_name = source[0]
+        conn_name = "source"
+        if len(source) == 2:
+            conn_name = source[1]
+
+        if node_name in graphics_view.loaded_measure_nodes.keys():
+            start_node = graphics_view.loaded_measure_nodes[node_name]
+            if conn_name in start_node.outputs.keys():
+                if 'sink' in node.inputs.keys():
+                    # Create wire and register with scene
+                    new_wire = Wire(start_node.outputs[conn_name])
+                    new_wire.setOpacity(0.0)
+                    graphics_view.addItem(new_wire)
+
+                    # Add to start node
+                    new_wire.set_start(start_node.outputs[conn_name].scenePos())
+                    start_node.outputs[conn_name].wires_out.append(new_wire)
+
+                    # Add to end node
+                    new_wire.end_obj = node.inputs['sink']
+                    new_wire.set_end(node.inputs['sink'].scenePos())
+                    node.inputs['sink'].wires_in.append(new_wire)
+                else:
+                    print("Could not find sink connector in", meas_name)
+            else:
+                print("Could not find source connector ", conn_name, "for node", node_name)
+
+        elif node_name in graphics_view.loaded_instr_nodes.keys():
+            start_node = graphics_view.loaded_instr_nodes[node_name]
+            if conn_name in start_node.outputs.keys():
+                if 'sink' in node.inputs.keys():
+                    # Create wire and register with scene
+                    new_wire = Wire(start_node.outputs[conn_name])
+                    new_wire.setOpacity(0.0)
+                    graphics_view.addItem(new_wire)
+
+                    # Add to start node
+                    new_wire.set_start(start_node.outputs[conn_name].scenePos())
+                    start_node.outputs[conn_name].wires_out.append(new_wire)
+
+                    # Add to end node
+                    new_wire.end_obj = node.inputs['sink']
+                    new_wire.set_end(node.inputs['sink'].scenePos())
+                    node.inputs['sink'].wires_in.append(new_wire)
+                else:
+                    print("Could not find sink connector ", conn_name)
+        else:
+            print("Could not find data_source")
+
+        graphics_view.fade_in_items()
+
 def parse_node_file(filename, graphics_view):
     with open(filename) as data_file:
         cat  = os.path.basename(os.path.dirname(filename))
@@ -188,6 +309,7 @@ def parse_quince_modules(graphics_view):
                     if auspex_param.default:
                         quince_param.set_value(auspex_param.default)
 
+                    quince_param.has_input = False
                     quince_param.auspex_object = auspex_param
                     node.add_parameter(quince_param)
 
