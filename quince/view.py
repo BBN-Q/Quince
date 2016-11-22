@@ -161,27 +161,6 @@ class NodeScene(QGraphicsScene):
     def load_pyqlab(self):
         load_from_pyqlab(self)
 
-    def fade_in_items(self):
-        self.draw_i = 0
-        self.increment = 15
-        self.duration = 300
-
-        self.fade_timer = QTimer()
-        self.fade_timer.timeout.connect(self.advance)
-        self.fade_timer.start(self.increment)
-
-    def advance(self):
-        if self.draw_i < self.duration:
-            for i in self.items():
-                if isinstance(i, Node) or isinstance(i, Wire):
-                    i.setOpacity(float(self.draw_i)/self.duration)
-            self.draw_i += self.increment
-        else:
-            for i in self.items():
-                if isinstance(i, Node) or isinstance(i, Wire):
-                    i.setOpacity(1.0)
-            self.fade_timer.stop()
-
     def reload_pyqlab(self):
         # Don't retain any undo information, since it is outdated
         self.undo_stack.clear()

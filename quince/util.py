@@ -40,3 +40,14 @@ class dummy_object_QPointF(QObject):
 	def dummy_set(self, value):
 		self.setter(value)
 	dummy = Property(QPointF, dummy_get, dummy_set) 
+
+class dummy_object_float(QObject):
+	"""Fake object for animation purposes"""
+	def __init__(self, getter, setter):
+		super(dummy_object_float, self).__init__()
+		self.getter, self.setter = getter, setter
+	def dummy_get(self):
+		return self.getter()
+	def dummy_set(self, value):
+		self.setter(value)
+	dummy = Property(float, dummy_get, dummy_set) 

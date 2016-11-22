@@ -47,8 +47,9 @@ def load_from_pyqlab(graphics_view):
     with open(graphics_view.window.sweepFile, 'r') as FID:
         graphics_view.sweep_settings = json.load(FID)["sweepDict"]
 
-    graphics_view.loaded_measure_nodes = {} # Keep track of nodes we create
-    graphics_view.loaded_instr_nodes = {} # Keep track of nodes we create
+    loaded_measure_nodes = {} # Keep track of nodes we create
+    loaded_instr_nodes = {} # Keep track of nodes we create
+    new_wires = []
 
     # Create and place the filters
     for meas_par in graphics_view.meas_settings.values():
@@ -70,7 +71,7 @@ def load_from_pyqlab(graphics_view):
             else:
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
             new_node.label.setPlainText(meas_name)
-            graphics_view.loaded_measure_nodes[meas_name] = new_node
+            loaded_measure_nodes[meas_name] = new_node
 
     # Create and place the instruments
     for instr_par in graphics_view.instr_settings.values():
@@ -91,9 +92,9 @@ def load_from_pyqlab(graphics_view):
             else:
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
             new_node.label.setPlainText(instr_name)
-            graphics_view.loaded_instr_nodes[instr_name] = new_node
+            loaded_instr_nodes[instr_name] = new_node
 
-    for name, node in graphics_view.loaded_measure_nodes.items():
+    for name, node in loaded_measure_nodes.items():
         meas_name = graphics_view.meas_settings[name]["label"]
 
         # Get the source name. If it contains a colon, then the part before the colon
@@ -106,13 +107,14 @@ def load_from_pyqlab(graphics_view):
         if len(source) == 2:
             conn_name = source[1]
 
-        if node_name in graphics_view.loaded_measure_nodes.keys():
-            start_node = graphics_view.loaded_measure_nodes[node_name]
+        if node_name in loaded_measure_nodes.keys():
+            start_node = loaded_measure_nodes[node_name]
             if conn_name in start_node.outputs.keys():
                 if 'sink' in node.inputs.keys():
                     # Create wire and register with scene
                     new_wire = Wire(start_node.outputs[conn_name])
                     new_wire.setOpacity(0.0)
+                    new_wires.append(new_wire)
                     graphics_view.addItem(new_wire)
 
                     # Add to start node
@@ -128,13 +130,14 @@ def load_from_pyqlab(graphics_view):
             else:
                 print("Could not find source connector ", conn_name, "for node", node_name)
 
-        elif node_name in graphics_view.loaded_instr_nodes.keys():
-            start_node = graphics_view.loaded_instr_nodes[node_name]
+        elif node_name in loaded_instr_nodes.keys():
+            start_node = loaded_instr_nodes[node_name]
             if conn_name in start_node.outputs.keys():
                 if 'sink' in node.inputs.keys():
                     # Create wire and register with scene
                     new_wire = Wire(start_node.outputs[conn_name])
                     new_wire.setOpacity(0.0)
+                    new_wires.append(new_wire)
                     graphics_view.addItem(new_wire)
 
                     # Add to start node
@@ -150,7 +153,18 @@ def load_from_pyqlab(graphics_view):
         else:
             print("Could not find data_source")
 
-        graphics_view.fade_in_items()
+        graphics_view.anim_group = QParallelAnimationGroup()
+        for item in new_wires + list(loaded_instr_nodes.values()) + list(loaded_measure_nodes.values()):
+            dummy = dummy_object_float(item.opacity, item.setOpacity)
+            anim = QPropertyAnimation(dummy, bytes("dummy".encode("ascii")))
+            anim.setDuration(300)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            graphics_view.anim_group.addAnimation(anim)
+
+        graphics_view.anim_group.start()
+
+        # graphics_view.fade_in_items()
 
 def parse_node_file(filename, graphics_view):
     with open(filename) as data_file:
