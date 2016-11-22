@@ -1,6 +1,0 @@
-{
-"name": "Simple Qubit",
-"outputs": ["Qubit"],
-"inputs": ["Drive Quad.", "Drive Marker", "Measure Quad.", "Measure Marker"],
-"parameters": []
-}

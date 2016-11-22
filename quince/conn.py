@@ -37,6 +37,9 @@ class Connector(QGraphicsEllipseItem):
             self.setBrush(Qt.white)
             self.setPen(QColor(50,50,50))
 
+        # Associate with auspex connectors
+        self.auspex_object = None
+
         # self.timeline = QTimeLine()
         self.wire_anim_group = QParallelAnimationGroup()
         self.exploded = False

@@ -50,8 +50,9 @@ class Node(QGraphicsRectItem):
         self.enabled = True
 
         # For PyQLab interoperability
-        self.x__class__ = None
-        self.x__module__ = None
+        self.x__class__    = None
+        self.x__module__   = None
+        self.auspex_object = None
 
         # Any additional json we should retain from PyQLab
         self.base_params = None

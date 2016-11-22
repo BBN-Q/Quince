@@ -1,7 +1,0 @@
-{"name":"Plot Data",
-	 "outputs": [],
-	 "inputs": ["Data"],
-	 "parameters":[
-		 {"name": "Plot Mode", "type": "combo", "choices": ["real/imag", "amp/phase", "quad"], "default": "real/imag"}
-	 ]
-}
