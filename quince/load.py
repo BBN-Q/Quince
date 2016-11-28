@@ -248,49 +248,43 @@ def parse_node_file(filename, graphics_view):
         action.triggered.connect(create_command)
         graphics_view.sub_menus[cat].addAction(action)
 
-def parse_quince_modules(graphics_view):
-    # Find all of the filters
-    filter_modules = {
-        name: importlib.import_module('auspex.filters.' + name)
-        for loader, name, is_pkg in pkgutil.walk_packages(auspex_filt.__path__)
-    }
-    filter_modules.pop('filter') # We don't want the base class
 
-    # Find all of the instruments
-    instrument_vendors = {
-        name: importlib.import_module('auspex.instruments.' + name)
-        for loader, name, is_pkg in pkgutil.iter_modules(instr.__path__)
-    }
-            
-    for mod_name in sorted(filter_modules.keys(), key=lambda s: s.lower()):
-        mod = filter_modules[mod_name]
+def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, submenu=None, mod_filter=None):
+    new_objects = {n: f for n, f in mod.__dict__.items() if inspect.isclass(f)
+                                                            and issubclass(f, base_class)
+                                                            and f != base_class}
+    
+    if mod_filter:
+        new_objects = {n: f for n, f in new_objects.items() if mod_filter(f)}
 
-        new_filters = {n: f for n, f in mod.__dict__.items() if inspect.isclass(f)
-                                                                and issubclass(f, Filter)
-                                                                and f != Filter}
-        if len(new_filters) > 0:
+    if len(new_objects) > 0:
+        if submenu:
+            sm = submenu.addMenu(mod_name)
+        else:
             sm = graphics_view.menu.addMenu(mod_name)
-            graphics_view.sub_menus[mod_name] = sm
+        graphics_view.sub_menus[mod_name] = sm
 
-        # These haven't been instantiated, so the input and output
-        # connectors should be a simple list in the class dictionary
-        for filt_name in sorted(new_filters.keys()):
-            filt = new_filters[filt_name]
+    # These haven't been instantiated, so the input and output
+    # connectors should be a simple list in the class dictionary
+    for obj_name in sorted(new_objects.keys()):
+        obj = new_objects[obj_name]
 
-            # Create a QAction and add to the menu
-            action = QAction(filt_name, graphics_view)
+        # Create a QAction and add to the menu
+        action = QAction(obj_name, graphics_view)
 
-            # Create function for dropping node on canvas
-            def create(the_filter, the_name, the_category):
-                node = Node(the_name, graphics_view)
-                node.cat_name = the_category
-                for op in the_filter._output_connectors:
+        # Create function for dropping node on canvas
+        def create(the_obj, the_name, the_category):
+            node = Node(the_name, graphics_view)
+            node.cat_name = the_category
+            obj_instance = the_obj()
+
+            if isinstance(obj_instance, Filter):
+                # Add connectors based on the Filter's stated inputs and outputs
+                for op in the_obj._output_connectors:
                     node.add_output(Connector(op, 'output'))
-                for ip in the_filter._input_connectors:
-                    node.add_input(Connector(ip, 'input'))
-
-                filter_instance = the_filter()
-                for auspex_param in filter_instance.quince_parameters:
+                for ip in the_obj._input_connectors:
+                    node.add_input(Connector(ip, 'input'))                
+                for auspex_param in obj_instance.quince_parameters:
                     if isinstance(auspex_param, auspex.parameter.FloatParameter) or isinstance(auspex_param, auspex.parameter.IntParameter):
                         if auspex_param.value_range:
                             low  = min(auspex_param.value_range)
@@ -326,29 +320,60 @@ def parse_quince_modules(graphics_view):
                     quince_param.has_input = False
                     quince_param.auspex_object = auspex_param
                     node.add_parameter(quince_param)
+            elif isinstance(obj_instance, Instrument):
+                # Add a single output connector for any digitizers
+                node.add_output(Connector('source', 'output'))
 
-                # Set the class and module infor for PyQLab
-                node.auspex_object = filter_instance
-                node.x__class__    = the_name
-                node.x__module__   = "MeasFilters"
+            # Set the class and module infor for PyQLab
+            node.auspex_object = obj_instance
+            node.x__class__    = the_name
+            node.x__module__   = x__module__
 
-                # See if names will be duplicated
-                node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]
-                nan = next_available_name(node_names, the_name)
-                node.label.setPlainText(nan)
+            # See if names will be duplicated
+            node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]
+            nan = next_available_name(node_names, the_name)
+            node.label.setPlainText(nan)
 
-                node.setPos(graphics_view.backdrop.mapFromParent(graphics_view.last_click))
-                node.setPos(graphics_view.last_click)
-                graphics_view.addItem(node)
-                return node
+            node.setPos(graphics_view.backdrop.mapFromParent(graphics_view.last_click))
+            node.setPos(graphics_view.last_click)
+            graphics_view.addItem(node)
+            return node
 
-            # Add to class
-            name = "create_"+("".join(filt_name.split()))
-            setattr(graphics_view, name, partial(create, filt, filt_name, mod_name))
-            func = getattr(graphics_view, name)
+        # Add to class
+        name = "create_"+("".join(obj_name.split()))
+        setattr(graphics_view, name, partial(create, obj, obj_name, mod_name))
+        func = getattr(graphics_view, name)
 
-            # Connect trigger for action
-            create_command = lambda: graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
-            action.triggered.connect(create_command)
-            graphics_view.sub_menus[mod_name].addAction(action)
+        # Connect trigger for action
+        create_command = lambda: graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
+        action.triggered.connect(create_command)
+        graphics_view.sub_menus[mod_name].addAction(action)
+
+def parse_quince_modules(graphics_view):
+    # Find all of the filters
+    filter_modules = {
+        name: importlib.import_module('auspex.filters.' + name)
+        for loader, name, is_pkg in pkgutil.iter_modules(auspex_filt.__path__)
+    }
+    filter_modules.pop('filter') # We don't want the base class
+
+    # Find all of the instruments
+    instrument_modules = {
+        name: importlib.import_module('auspex.instruments.' + name)
+        for loader, name, is_pkg in pkgutil.iter_modules(instr.__path__)
+    }
+            
+    for mod_name in sorted(filter_modules.keys(), key=lambda s: s.lower()):
+        mod = filter_modules[mod_name]
+        parse_quince_module(mod_name, mod, Filter, graphics_view, "MeasFilters")
+
+    graphics_view.menu.addSeparator()
+    graphics_view.instruments_menu = graphics_view.menu.addMenu("instruments")
+    graphics_view.sub_menus["instruments"] = graphics_view.instruments_menu
+
+    for mod_name in sorted(instrument_modules.keys(), key=lambda s: s.lower()):
+        mod = instrument_modules[mod_name]
+        parse_quince_module(mod_name, mod, Instrument, graphics_view, "MeasFilters",
+                            submenu=graphics_view.instruments_menu,
+                            mod_filter=lambda m: hasattr(m, 'instrument_type') and m.instrument_type == "Digitizer")
 

@@ -128,28 +128,13 @@ class NodeScene(QGraphicsScene):
 
     def generate_menus(self):
 
+        # Load nodes from JSON
         path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "nodes")
         node_files = sorted(glob.glob(path+'/*/*.json'))
         categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
 
         for cat in sorted(categories, key=lambda s: s.lower()):
             sm = self.menu.addMenu(cat)
-            self.sub_menus[cat] = sm
-
-        for nf in node_files:
-            parse_node_file(nf, self)
-
-        # Now add the instruments
-        self.menu.addSeparator()
-        self.instruments_menu = self.menu.addMenu("instruments")
-        self.sub_menus["instruments"] = self.instruments_menu
-
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "auspex-nodes/instruments")
-        node_files = sorted(glob.glob(path+'/*/*.json'))
-        categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
-
-        for cat in sorted(categories, key=lambda s: s.lower()):
-            sm = self.instruments_menu.addMenu(cat)
             self.sub_menus[cat] = sm
 
         for nf in node_files:
@@ -286,6 +271,11 @@ class NodeWindow(QMainWindow):
         selectAllConnectedAction.setStatusTip('Select All Connected')
         selectAllConnectedAction.triggered.connect(self.select_all_connected)
 
+        constructExperimentAction = QAction('&Construct Experiment', self)
+        constructExperimentAction.setShortcut('Shift+Ctrl+E')
+        constructExperimentAction.setStatusTip('Construct Experiment')
+        constructExperimentAction.triggered.connect(self.construct_experiment)
+
         collapseAllAction = QAction('&Collapse All', self)
         collapseAllAction.setShortcut('Ctrl+K')
         collapseAllAction.setStatusTip('Collapse All')
@@ -327,6 +317,7 @@ class NodeWindow(QMainWindow):
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
         editMenu.addAction(collapseAllAction)
+        editMenu.addAction(constructExperimentAction)
         editMenu.addAction(toggleEnabledAction)
         editMenu.addAction(duplicateAction)
         editMenu.addSeparator()
@@ -429,6 +420,11 @@ class NodeWindow(QMainWindow):
 
     def redo(self):
         self.scene.undo_stack.redo()
+
+    def construct_experiment(self):
+        nodes = [i for i in self.scene.items() if isinstance(i, Node)]
+        wires = [i for i in self.scene.items() if isinstance(i, Wire)]
+        create_experiment_graph(nodes, wires)
 
     def select_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
