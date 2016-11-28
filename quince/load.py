@@ -253,7 +253,7 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
     new_objects = {n: f for n, f in mod.__dict__.items() if inspect.isclass(f)
                                                             and issubclass(f, base_class)
                                                             and f != base_class}
-    
+
     if mod_filter:
         new_objects = {n: f for n, f in new_objects.items() if mod_filter(f)}
 
@@ -283,7 +283,7 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
                 for op in the_obj._output_connectors:
                     node.add_output(Connector(op, 'output'))
                 for ip in the_obj._input_connectors:
-                    node.add_input(Connector(ip, 'input'))                
+                    node.add_input(Connector(ip, 'input'))
                 for auspex_param in obj_instance.quince_parameters:
                     if isinstance(auspex_param, auspex.parameter.FloatParameter) or isinstance(auspex_param, auspex.parameter.IntParameter):
                         if auspex_param.value_range:
@@ -296,9 +296,9 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
 
                         if not auspex_param.increment:
                             auspex_param.increment = 0.05*(high-low)
-                        
+
                         snap = auspex_param.snap
-                    
+
                     if isinstance(auspex_param, auspex.parameter.FloatParameter):
                         quince_param = NumericalParameter(auspex_param.name, float,
                                         low, high, auspex_param.increment, auspex_param.snap)
@@ -313,7 +313,7 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
                         if auspex_param.allowed_values:
                             quince_param = ComboParameter(auspex_param.name, auspex_param.allowed_values)
                         else:
-                            quince_param = StringParameter(auspex_param.name) 
+                            quince_param = StringParameter(auspex_param.name)
                     if auspex_param.default:
                         quince_param.set_value(auspex_param.default)
 
@@ -362,7 +362,7 @@ def parse_quince_modules(graphics_view):
         name: importlib.import_module('auspex.instruments.' + name)
         for loader, name, is_pkg in pkgutil.iter_modules(instr.__path__)
     }
-            
+
     for mod_name in sorted(filter_modules.keys(), key=lambda s: s.lower()):
         mod = filter_modules[mod_name]
         parse_quince_module(mod_name, mod, Filter, graphics_view, "MeasFilters")
@@ -373,7 +373,6 @@ def parse_quince_modules(graphics_view):
 
     for mod_name in sorted(instrument_modules.keys(), key=lambda s: s.lower()):
         mod = instrument_modules[mod_name]
-        parse_quince_module(mod_name, mod, Instrument, graphics_view, "MeasFilters",
+        parse_quince_module(mod_name, mod, Instrument, graphics_view, "instruments.Digitizers",
                             submenu=graphics_view.instruments_menu,
                             mod_filter=lambda m: hasattr(m, 'instrument_type') and m.instrument_type == "Digitizer")
-
