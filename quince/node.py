@@ -324,10 +324,21 @@ class Node(QGraphicsRectItem):
         painter.drawRoundedRect(self.rect(), 5.0, 5.0)
 
     def dict_repr(self):
+        # First spit out any json that can't be modified in Quince.
+        # Base_params holds any parameters that aren't flagged as 
+        # being "quince_parameters" in the auspex filters.
+
         if self.base_params is not None:
             dict_repr = dict(self.base_params)
         else:
             dict_repr = {}
+
+        # Now update and of the parameters that are set within
+        # Quince.
+        for name, param in self.parameters.items():
+            print(self.label.toPlainText(), ":", name, "would receive param value", param.value())
+            # .parameters[k].set_value(v)
+            dict_repr[name] = param.value()
 
         # Find the name of the source connectors (assuming one connection)
         # The default connector name is "source", in which case data_source

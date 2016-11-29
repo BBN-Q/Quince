@@ -63,7 +63,15 @@ def load_from_pyqlab(graphics_view):
         if hasattr(graphics_view, 'create_'+meas_type):
             new_node = getattr(graphics_view, 'create_'+meas_type)()
             new_node.enabled = meas_par['enabled']
-            new_node.base_params = meas_par
+
+            # Set the parameters:
+            new_node.base_params = {}
+            for k, v in meas_par.items():
+                if k in new_node.parameters.keys():
+                    new_node.parameters[k].set_value(v)
+                else:
+                    new_node.base_params[k] = v
+
             new_node.setOpacity(0.0)
             stored_loc = graphics_view.settings.value("node_positions/" + meas_name + "_pos")
             if stored_loc is not None and isinstance(stored_loc, QPointF):
