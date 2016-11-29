@@ -129,6 +129,8 @@ class Node(QGraphicsRectItem):
         widths.extend([i.width() for i in self.inputs.values()])
         widths.append(self.label.boundingRect().topRight().x())
         self.min_width = max(widths)+20
+        if self.min_width < 120:
+            self.min_width = 120.0
         self.itemResize(QPointF(-100.0,-100.0))
 
     def value_changed(self, name):
