@@ -288,10 +288,14 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
 
             if isinstance(obj_instance, Filter):
                 # Add connectors based on the Filter's stated inputs and outputs
-                for op in the_obj._output_connectors:
-                    node.add_output(Connector(op, 'output'))
-                for ip in the_obj._input_connectors:
-                    node.add_input(Connector(ip, 'input'))
+                for op in obj_instance._output_connectors:
+                    conn = Connector(op, 'output')
+                    conn.auspex_object = obj_instance.output_connectors[op]
+                    node.add_output(conn)
+                for ip in obj_instance._input_connectors:
+                    conn = Connector(ip, 'input')
+                    conn.auspex_object = obj_instance.input_connectors[ip]
+                    node.add_input(conn)
                 for auspex_param in obj_instance.quince_parameters:
                     if isinstance(auspex_param, auspex.parameter.FloatParameter) or isinstance(auspex_param, auspex.parameter.IntParameter):
                         if auspex_param.value_range:

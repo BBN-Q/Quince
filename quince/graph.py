@@ -34,12 +34,14 @@ def descendants(graph, node):
 def create_experiment_graph(nodes, wires):
     exp = Experiment()
 
+    # Add output connectors to the experiment
     for node in nodes:
-        if node.auspex_object.instrument_type == "Digitizer":
-            conn = OutputConnector(name=oc, data_name=oc, parent=self)
-            conn.parent = exp
-            exp.output_connectors[oc] = conn
-            setattr(exp, oc, conn)
+        if hasattr(node.auspex_object, 'instrument_type') and node.auspex_object.instrument_type == "Digitizer":
+            name = node.label.toPlainText()
+            conn = OutputConnector(name=name, data_name=name, parent=exp)
+            exp.output_connectors[name] = conn
+            setattr(exp, name, conn)
+            node.outputs["source"].auspex_object = conn
 
     graph = []
     for wire in wires:
