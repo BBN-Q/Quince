@@ -338,8 +338,6 @@ class Node(QGraphicsRectItem):
         # Now update and of the parameters that are set within
         # Quince.
         for name, param in self.parameters.items():
-            print(self.label.toPlainText(), ":", name, "would receive param value", param.value())
-            # .parameters[k].set_value(v)
             dict_repr[name] = param.value()
 
         # Find the name of the source connectors (assuming one connection)
@@ -550,9 +548,9 @@ class CommandDuplicateNodes(QUndoCommand):
             nan = next_available_name(node_names, strip_numbers(sn.label.toPlainText()))
             new_node.label.setPlainText(nan)
 
-            # Set parameters from old
+            # Set base parameters from old
             new_node.update_parameters_from(sn)
-            if new_node.base_params is not None:
+            if sn.base_params:
                 new_node.base_params = dict(sn.base_params)
             new_node.enabled = sn.enabled
 
