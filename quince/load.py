@@ -326,7 +326,7 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
                             quince_param = ComboParameter(auspex_param.name, auspex_param.allowed_values)
                         else:
                             quince_param = StringParameter(auspex_param.name)
-                    if auspex_param.default:
+                    if hasattr(auspex_param, 'default') and auspex_param.default:
                         quince_param.set_value(auspex_param.default)
 
                     quince_param.has_input = False

@@ -438,18 +438,18 @@ class ValueBoxText(QGraphicsTextItem):
                 self.setPlainText(clipped+"...")
 
     def focusOutEvent(self, event):
-        self.set_text_interaction(False)
-        self.parent.set_value(self.toPlainText())
         self.full_text = self.toPlainText()
+        self.set_text_interaction(False)
+        self.parent.set_value(self.full_text)
         self.clip_text()
         self.parent.refresh_label()
         return super(ValueBoxText, self).focusOutEvent(event)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            self.set_text_interaction(False)
-            self.parent.set_value(self.toPlainText())
             self.full_text = self.toPlainText()
+            self.set_text_interaction(False)
+            self.parent.set_value(self.full_text)
             self.clip_text()
             self.parent.refresh_label()
         else:
