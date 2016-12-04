@@ -458,8 +458,9 @@ class NodeWindow(QMainWindow):
         items = []
         items.extend(selected_nodes)
         for sn in selected_nodes:
-            descs = descendants(graph, sn)
-            items.extend(descs)
+            if sn in graph.nodes():
+                descs = descendants(graph, sn)
+                items.extend(descs)
 
         new_status = not nodes_by_label[selected_nodes[0]].enabled
 
