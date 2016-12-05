@@ -165,17 +165,38 @@ class NodeScene(QGraphicsScene):
     def save_for_pyqlab(self):
         self.save_node_positions_to_settings()
 
+        nodes  = [i for i in self.items() if isinstance(i, Node)]
+
         if not hasattr(self, 'meas_settings'):
             self.window.set_status("Not launched from PyQLab, and therefore cannot save to PyQLab JSON.")
             return
         with open(self.window.measFile, 'w') as df:
-            nodes  = [i for i in self.items() if isinstance(i, Node)]
-
             data = {}
             data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'MeasFilters'}
             data["version"]     = self.meas_settings_version
             data["x__class__"]  = "MeasFilterLibrary"
             data["x__module__"] = "MeasFilters"
+
+            self.window.ignore_file_updates = True
+            self.window.ignore_timer.start()
+            json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
+        
+        with open(self.window.instrFile, 'w') as df:
+            data = {}
+            data["instrDict"]  = self.instr_settings
+            data["version"]     = self.instr_settings_version
+            data["x__class__"]  = "InstrumentLibrary"
+            data["x__module__"] = "instruments.InstrumentManager"
+
+            # Strip any old digitizers
+            for name in list(data["instrDict"].keys()):
+                if data["instrDict"][name]['x__module__'] == 'instruments.Digitizers':
+                    data["instrDict"].pop(name)
+
+            # Replace the digitizers, since that's all quince cares about for the moment
+            digitizers = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'instruments.Digitizers'}
+            for name, dict_repr in digitizers.items():
+                data["instrDict"][name] = dict_repr
 
             self.window.ignore_file_updates = True
             self.window.ignore_timer.start()

@@ -358,6 +358,10 @@ class Node(QGraphicsRectItem):
         else:
             dict_repr['data_source'] = ""
 
+        # data_source not applicable for digitizers
+        if self.x__module__ == 'instruments.Digitizers':
+            dict_repr.pop('data_source')
+
         dict_repr['label']       = self.label.toPlainText()
         dict_repr['enabled']     = self.enabled
         dict_repr['x__class__']  = self.x__class__

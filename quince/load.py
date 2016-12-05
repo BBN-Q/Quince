@@ -42,7 +42,9 @@ def load_from_pyqlab(graphics_view):
         graphics_view.meas_settings_version = settings["version"]
 
     with open(graphics_view.window.instrFile, 'r') as FID:
-        graphics_view.instr_settings = json.load(FID)["instrDict"]
+        settings = json.load(FID)
+        graphics_view.instr_settings = settings["instrDict"]
+        graphics_view.instr_settings_version = settings["version"]
 
     with open(graphics_view.window.sweepFile, 'r') as FID:
         graphics_view.sweep_settings = json.load(FID)["sweepDict"]
