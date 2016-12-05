@@ -302,6 +302,11 @@ class NodeWindow(QMainWindow):
         collapseAllAction.setStatusTip('Collapse All')
         collapseAllAction.triggered.connect(self.collapse_all)
 
+        expandAllAction = QAction('&Expand All', self)
+        expandAllAction.setShortcut('Shift+Ctrl+K')
+        expandAllAction.setStatusTip('Expand All')
+        expandAllAction.triggered.connect(self.expand_all)
+
         toggleEnabledAction = QAction('&Toggle Descendants', self)
         toggleEnabledAction.setShortcut('Ctrl+E')
         toggleEnabledAction.setStatusTip('Toggle the Enabled/Disabled status of all descendant nodes.')
@@ -338,6 +343,7 @@ class NodeWindow(QMainWindow):
         editMenu.addAction(selectAllAction)
         editMenu.addAction(selectAllConnectedAction)
         editMenu.addAction(collapseAllAction)
+        editMenu.addAction(expandAllAction)
         editMenu.addAction(constructExperimentAction)
         editMenu.addAction(toggleEnabledAction)
         editMenu.addAction(duplicateAction)
@@ -492,6 +498,11 @@ class NodeWindow(QMainWindow):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
         for n in nodes:
             n.change_collapsed_state(True)
+
+    def expand_all(self):
+        nodes = [i for i in self.scene.items() if isinstance(i, Node)]
+        for n in nodes:
+            n.change_collapsed_state(False)
 
     def duplicate(self):
         selected_nodes = [i for i in self.scene.items() if isinstance(i, Node) and i.isSelected()]

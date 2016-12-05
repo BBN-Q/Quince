@@ -57,18 +57,21 @@ class Node(QGraphicsRectItem):
         # Any additional json we should retain from PyQLab
         self.base_params = None
 
-        if self.label.boundingRect().topRight().x() > 120:
-            self.min_width = self.label.boundingRect().topRight().x()+20
-            self.setRect(0,0,self.label.boundingRect().topRight().x()+20,30)
-        else:
-            self.min_width = 120.0
-
-        self.min_height = 30
-
         # Dividing line and collapse button
         self.divider = QGraphicsLineItem(20, 0, self.rect().width()-5, 0, self)
         self.collapse_box = CollapseBox(parent=self)
         self.collapse_box.setX(10)
+
+        # Make sure things are properly sized
+        self.min_height = 30.0
+        self.min_width = 120.0
+        self.update_min_width()
+
+        # if self.label.boundingRect().topRight().x() > 120:
+        #     self.min_width = self.label.boundingRect().topRight().x()+20
+        #     self.setRect(0,0,self.label.boundingRect().topRight().x()+20,30)
+        # else:
+        #     self.min_width = 120.0
 
         # Resize Handle
         self.resize_handle = ResizeHandle(parent=self)
@@ -76,9 +79,6 @@ class Node(QGraphicsRectItem):
 
         # Disable box
         self.disable_box = None
-
-        # Make sure things are properly sized
-        self.itemResize(QPointF(0.0,0.0))
 
         # Synchronizing parameters
         self.changing = False
@@ -124,14 +124,14 @@ class Node(QGraphicsRectItem):
         self.update()
 
     def update_min_width(self):
-        widths = [p.width() for p in self.parameters.values()]
-        widths.extend([o.width() for o in self.outputs.values()])
-        widths.extend([i.width() for i in self.inputs.values()])
+        widths = [p.label.boundingRect().topRight().x() for p in self.parameters.values()]
+        widths.extend([o.label.boundingRect().topRight().x() for o in self.outputs.values()])
+        widths.extend([i.label.boundingRect().topRight().x() for i in self.inputs.values()])
         widths.append(self.label.boundingRect().topRight().x())
         self.min_width = max(widths)+20
         if self.min_width < 120:
             self.min_width = 120.0
-        self.itemResize(QPointF(-100.0,-100.0))
+        self.itemResize(QPointF(self.min_width - self.rect().width(),0.0))
 
     def value_changed(self, name):
         # Update the sweep parameters accordingly
@@ -207,7 +207,7 @@ class Node(QGraphicsRectItem):
                 else:
                     pos += self.parameters[self.parameter_order[i]].height
 
-        self.setRect(0,0,self.min_width, pos)
+        self.setRect(0,0,self.rect().width(), pos)
         self.min_height = pos
         self.update_min_width()
         self.itemResize(QPointF(0.0,0.0))
