@@ -345,16 +345,22 @@ class Node(QGraphicsRectItem):
         # is just the name of the node. Otherwise, we return a data_source
         # of the form "node_name:connector_name", e.g.
         # "averager:partial_averages"
+        # If we have multiple inputs, they are simply separated by commas 
+        # and some arbitrary and optional amount of whitespace.
 
         if ('sink' in self.inputs.keys()) and len(self.inputs['sink'].wires_in) > 0:
-            connector = self.inputs['sink'].wires_in[0].start_obj
-            node_name = connector.parent.label.toPlainText()
-            conn_name = connector.name
+            connectors = [w.start_obj for w in self.inputs['sink'].wires_in]
+            source_text = []
+            for conn in connectors:
+                node_name = conn.parent.label.toPlainText()
+                conn_name = conn.name
             
-            if conn_name == "source":
-                dict_repr['data_source'] = node_name
-            else:
-                dict_repr['data_source'] = node_name + ":" + conn_name
+                if conn_name == "source":
+                    source_text.append(node_name)
+                else:
+                    source_text.append(node_name + ":" + conn_name)
+
+            dict_repr['data_source'] = ", ".join(source_text)
         else:
             dict_repr['data_source'] = ""
 
