@@ -7,6 +7,8 @@
 import networkx as nx
 
 try:
+    import auspex.globals
+    auspex.globals.auspex_dummy_mode = True
     from auspex.experiment import Experiment
     from auspex.stream import DataStream, DataAxis, SweepAxis, DataStreamDescriptor, OutputConnector
 except:

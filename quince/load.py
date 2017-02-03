@@ -18,9 +18,12 @@ import importlib
 import pkgutil
 import inspect
 import sys
+
 from functools import partial
 
 try:
+    import auspex.globals
+    auspex.globals.auspex_dummy_mode = True
     import auspex
     import auspex.filters as auspex_filt
     import auspex.instruments as instr
