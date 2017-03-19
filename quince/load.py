@@ -30,9 +30,9 @@ try:
     from auspex.filters.filter import Filter
     import auspex.parameter
     from auspex.instruments.instrument import Instrument, SCPIInstrument, CLibInstrument
-except ImportError:
+except ImportError as e:
     NO_AUSPEX = True
-    print("Could not locate auspex in the python path. There will be no nodes.")
+    print("Failed to load Auspex with error '{}'. There will be no nodes.".format(str(e)))
 
 def load_from_pyqlab(graphics_view):
 
