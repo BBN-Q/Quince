@@ -21,6 +21,7 @@ import sys
 
 from functools import partial
 
+NO_AUSPEX = False
 try:
     import auspex.globals
     auspex.globals.auspex_dummy_mode = True
