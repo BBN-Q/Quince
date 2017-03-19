@@ -30,9 +30,9 @@ try:
     from auspex.filters.filter import Filter
     import auspex.parameter
     from auspex.instruments.instrument import Instrument, SCPIInstrument, CLibInstrument
-except:
-    no_auspex = True
-    print("Could not locate auspex in the python path. Will only load json nodes.")
+except ImportError:
+    NO_AUSPEX = True
+    print("Could not locate auspex in the python path. There will be no nodes.")
 
 def load_from_pyqlab(graphics_view):
 
@@ -370,6 +370,9 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
         graphics_view.sub_menus[mod_name].addAction(action)
 
 def parse_quince_modules(graphics_view):
+    if NO_AUSPEX:
+        return
+
     # Find all of the filters
     filter_modules = {
         name: importlib.import_module('auspex.filters.' + name)
