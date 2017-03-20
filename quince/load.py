@@ -79,11 +79,17 @@ def load_from_pyqlab(graphics_view):
                     new_node.base_params[k] = v
 
             new_node.setOpacity(0.0)
-            stored_loc = graphics_view.settings.value("node_positions/" + meas_name + "_pos")
-            if stored_loc is not None and isinstance(stored_loc, QPointF):
-                new_node.setPos(stored_loc)
-            else:
+            try:
+                # Sometimes the settings get gunked up...
+                stored_loc = graphics_view.settings.value("node_positions/" + meas_name + "_pos")
+                if stored_loc is not None and isinstance(stored_loc, QPointF):
+                    new_node.setPos(stored_loc)
+                else:
+                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+            except:
+                print("Error when loading node position from QSettings...")
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+                graphics_view.settings.setValue("node_positions/" + meas_name + "_pos", new_node.pos())
             new_node.label.setPlainText(meas_name)
             loaded_measure_nodes[meas_name] = new_node
 
@@ -102,11 +108,19 @@ def load_from_pyqlab(graphics_view):
             new_node.enabled = instr_par['enabled']
             new_node.base_params = instr_par
             new_node.setOpacity(0.0)
-            stored_loc = graphics_view.settings.value("node_positions/" + instr_name + "_pos")
-            if stored_loc is not None:
-                new_node.setPos(stored_loc)
-            else:
+            
+            try:
+                # Sometimes the settings get gunked up...
+                stored_loc = graphics_view.settings.value("node_positions/" + instr_name + "_pos")
+                if stored_loc is not None:
+                    new_node.setPos(stored_loc)
+                else:
+                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+
+            except:
+                print("Error when loading node position from QSettings...", )
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+                graphics_view.settings.setValue("node_positions/" + instr_name + "_pos", new_node.pos())
             new_node.label.setPlainText(instr_name)
             loaded_instr_nodes[instr_name] = new_node
 
