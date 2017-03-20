@@ -91,9 +91,11 @@ def load_from_pyqlab(graphics_view):
     for instr_par in graphics_view.instr_settings.values():
         instr_name = instr_par["label"]
         instr_type = instr_par["x__class__"]
-        # Perform some translation
-        if instr_type in name_changes.keys():
-            instr_type = name_changes[instr_type]
+
+        # Put only digitizers on the graph
+        if instr_par["x__module__"] != "instruments.Digitizers":
+            continue
+
         # See if the filter exists, and then create it
         if hasattr(graphics_view, 'create_'+instr_type):
             new_node = getattr(graphics_view, 'create_'+instr_type)()
@@ -170,18 +172,16 @@ def load_from_pyqlab(graphics_view):
             else:
                 print("Could not find data_source")
 
-        graphics_view.anim_group = QParallelAnimationGroup()
-        for item in new_wires + list(loaded_instr_nodes.values()) + list(loaded_measure_nodes.values()):
-            dummy = dummy_object_float(item.opacity, item.setOpacity)
-            anim = QPropertyAnimation(dummy, bytes("dummy".encode("ascii")))
-            anim.setDuration(300)
-            anim.setStartValue(0.0)
-            anim.setEndValue(1.0)
-            graphics_view.anim_group.addAnimation(anim)
-
-        graphics_view.anim_group.start()
-
-        # graphics_view.fade_in_items()
+    # Stick everything in an animation group and ramp the opacity up to 1 (fade in)
+    graphics_view.anim_group = QParallelAnimationGroup()
+    for item in new_wires + list(loaded_instr_nodes.values()) + list(loaded_measure_nodes.values()):
+        dummy = dummy_object_float(item.opacity, item.setOpacity)
+        anim = QPropertyAnimation(dummy, bytes("dummy".encode("ascii")))
+        anim.setDuration(300)
+        anim.setStartValue(0.0)
+        anim.setEndValue(1.0)
+        graphics_view.anim_group.addAnimation(anim)
+    graphics_view.anim_group.start()
 
 def parse_node_file(filename, graphics_view):
     with open(filename) as data_file:
