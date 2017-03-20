@@ -261,7 +261,8 @@ def parse_node_file(filename, graphics_view):
         func = getattr(graphics_view, name)
 
         # Connect trigger for action
-        create_command = lambda: graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
+        def create_command(name=name,func=func,graphics_view=graphics_view):
+            graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
         action.triggered.connect(create_command)
         graphics_view.sub_menus[cat].addAction(action)
 
@@ -366,7 +367,8 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
         func = getattr(graphics_view, name)
 
         # Connect trigger for action
-        create_command = lambda: graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
+        def create_command(name=name,func=func,graphics_view=graphics_view):
+            graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
         action.triggered.connect(create_command)
         graphics_view.sub_menus[mod_name].addAction(action)
 
@@ -380,6 +382,7 @@ def parse_quince_modules(graphics_view):
         for loader, name, is_pkg in pkgutil.iter_modules(auspex_filt.__path__)
     }
     filter_modules.pop('filter') # We don't want the base class
+    filter_modules.pop('elementwise') # This one is also an abstract base class
 
     # Find all of the instruments
     instrument_modules = {
