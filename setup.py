@@ -7,9 +7,7 @@ if os.name == 'nt':
 
     # Create the run-quince.bat script
     with open('run-quince.bat', 'w') as f:
-        f.write("call activate pyqt5\n")
         f.write("python {} %*\n".format(path))
-        f.write("deactivate\n")
 
     script_names = ['run-quince.bat']
 else:
