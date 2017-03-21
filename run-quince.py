@@ -1,4 +1,4 @@
-#!C:\Users\qlab\Anaconda3\envs\pyqt5\python.exe
+#!/usr/bin/env python3
 # coding: utf-8
 # Raytheon BBN Technologies 2016
 # Contributiors: Graham Rowlands
