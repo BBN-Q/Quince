@@ -312,6 +312,10 @@ class NodeWindow(QMainWindow):
         toggleEnabledAction.setStatusTip('Toggle the Enabled/Disabled status of all descendant nodes.')
         toggleEnabledAction.triggered.connect(self.toggle_enable_descendants)
 
+        autoLayoutAction = QAction('&Auto Layout', self)
+        autoLayoutAction.setStatusTip('Auto-arrange the nodes.')
+        autoLayoutAction.triggered.connect(self.auto_layout)
+
         duplicateAction = QAction('&Duplicate', self)
         duplicateAction.setShortcut('Ctrl+D')
         duplicateAction.setStatusTip('Duplicate')
@@ -347,6 +351,8 @@ class NodeWindow(QMainWindow):
         editMenu.addAction(constructExperimentAction)
         editMenu.addAction(toggleEnabledAction)
         editMenu.addAction(duplicateAction)
+        editMenu.addSeparator()
+        editMenu.addAction(autoLayoutAction)
         editMenu.addSeparator()
         editMenu.addAction(undoAction)
         editMenu.addAction(redoAction)
@@ -493,6 +499,17 @@ class NodeWindow(QMainWindow):
 
         for i in items:
             nodes_by_label[i].enabled = new_status
+
+    def auto_layout(self):
+        nodes = [i for i in self.scene.items() if isinstance(i, Node)]
+        wires = [i for i in self.scene.items() if isinstance(i, Wire)]
+        nodes_by_label = {i.label.toPlainText(): i for i in self.scene.items() if isinstance(i, Node)}
+        graph = generate_graph(wires, dag=True)
+        input_nodes = graph_input_nodes(graph)
+        for input_node in input_nodes:
+            pos = hierarchy_pos(graph, input_node)
+            for l, p in pos.items():
+                nodes_by_label[l].setPos(-p[1], p[0])
 
     def collapse_all(self):
         nodes = [i for i in self.scene.items() if isinstance(i, Node)]
