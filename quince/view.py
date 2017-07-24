@@ -9,8 +9,6 @@ from qtpy.QtCore import *
 from qtpy.QtSvg import *
 from qtpy.QtWidgets import *
 
-from JSONLibraryUtils.FileWatcher import LibraryFileWatcher
-import json
 import glob
 import time
 import os.path
@@ -127,19 +125,6 @@ class NodeScene(QGraphicsScene):
         self.open_add_menu(event.screenPos())
 
     def generate_menus(self):
-
-        # Load nodes from JSON
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "nodes")
-        node_files = sorted(glob.glob(path+'/*/*.json'))
-        categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
-
-        for cat in sorted(categories, key=lambda s: s.lower()):
-            sm = self.menu.addMenu(cat)
-            self.sub_menus[cat] = sm
-
-        for nf in node_files:
-            parse_node_file(nf, self)
-
         # Parse Auspex directly
         parse_quince_modules(self)
 
