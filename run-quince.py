@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     app = QApplication([])
     window = NodeWindow()
-    window.load_pyqlab(measFile=args.filename)
+    window.load_yaml(args.filename)
     app.aboutToQuit.connect(window.cleanup)
     window.show()
 
