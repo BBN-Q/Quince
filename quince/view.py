@@ -58,7 +58,7 @@ class NodeScene(QGraphicsScene):
 
         self.last_click = self.backdrop.pos()
 
-        self.settings = QSettings("BBN", "Quince")
+        self.qt_settings = QSettings("BBN", "Quince")
 
         self.undo_stack = QUndoStack(self)
 
@@ -144,48 +144,38 @@ class NodeScene(QGraphicsScene):
 
     def save_node_positions_to_settings(self):
         for n in [i for i in self.items() if isinstance(i, Node)]:
-            self.settings.setValue("node_positions/" + n.label.toPlainText() + "_pos", n.pos())
-        self.settings.sync()
+            self.qt_settings.setValue("node_positions/" + n.label.toPlainText() + "_pos", n.pos())
+        self.qt_settings.sync()
 
     def save_for_yaml(self):
         self.save_node_positions_to_settings()
 
-        nodes  = [i for i in self.items() if isinstance(i, Node)]
+        nodes      = [i for i in self.items() if isinstance(i, Node)]
+        node_names = [n.label.toPlainText() for n in nodes]
 
-        if not hasattr(self, 'meas_settings'):
-            self.window.set_status("Not launched from yaml, and therefore cannot save to yaml JSON.")
+        if not hasattr(self, 'settings'):
+            self.window.set_status("Not launched with yaml config. Cannot save to yaml.")
             return
-        with open(self.window.meas_file, 'w') as df:
-            data = {}
-            data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'MeasFilters'}
-            data["version"]     = self.meas_settings_version
-            data["x__class__"]  = "MeasFilterLibrary"
-            data["x__module__"] = "MeasFilters"
 
-            self.window.ignore_file_updates = True
-            self.window.ignore_timer.start()
-            json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
-        
-        with open(self.window.instrFile, 'w') as df:
-            data = {}
-            data["instrDict"]  = self.instr_settings
-            data["version"]     = self.instr_settings_version
-            data["x__class__"]  = "InstrumentLibrary"
-            data["x__module__"] = "instruments.InstrumentManager"
+        # Start from the original config file in order that we can save comments
+        # and other human-friendly conveniences.
+        for node, node_name in zip(nodes, node_names):
+            if node.is_instrument:
+                for k, v in node.dict_repr().items():
+                    self.settings["instruments"][node_name][k] = v
+            else:
+                for k, v in node.dict_repr().items():
+                    self.settings["filters"][node_name][k] = v
 
-            # Strip any old digitizers
-            for name in list(data["instrDict"].keys()):
-                if data["instrDict"][name]['x__module__'] == 'instruments.Digitizers':
-                    data["instrDict"].pop(name)
-
-            # Replace the digitizers, since that's all quince cares about for the moment
-            digitizers = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'instruments.Digitizers'}
-            for name, dict_repr in digitizers.items():
-                data["instrDict"][name] = dict_repr
-
-            self.window.ignore_file_updates = True
-            self.window.ignore_timer.start()
-            json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
+        # Prune stale (deleted) items from the config
+        for section in ("filters", "instruments"):
+            for name in list(self.settings[section].keys()):
+                if name not in node_names:
+                    self.settings[section].pop(name)
+      
+        self.window.ignore_file_updates = True
+        self.window.ignore_timer.start()
+        yaml_dump(self.settings, self.window.meas_file)
 
     def create_node_by_name(self, name):
         create_node_func_name = "create_"+("".join(name.split()))

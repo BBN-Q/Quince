@@ -88,16 +88,16 @@ def yaml_load(filename):
 def yaml_dump(data, filename):
     with open(filename, 'w') as fid:
         Dumper.add_representer(Include, Dumper.include)
-        yaml.dump(code, fid, Dumper=Dumper)
+        yaml.dump(data, fid, Dumper=Dumper)
 
 def load_from_yaml(graphics_view):
 
     name_changes = {'KernelIntegration': 'KernelIntegrator',
                     'DigitalDemod': 'Channelizer'}
 
-    settings, _ = yaml_load(graphics_view.window.meas_file)
-    graphics_view.filter_settings = settings["filters"]
-    graphics_view.instr_settings  = settings["instruments"]
+    graphics_view.settings, _     = yaml_load(graphics_view.window.meas_file)
+    graphics_view.filter_settings = graphics_view.settings["filters"]
+    graphics_view.instr_settings  = graphics_view.settings["instruments"]
 
     loaded_filter_nodes = {} # Keep track of nodes we create
     loaded_instr_nodes  = {} # Keep track of nodes we create
@@ -119,7 +119,8 @@ def load_from_yaml(graphics_view):
                 filt_par['enabled'] = True
             new_node.enabled = filt_par['enabled']
 
-            # Set the parameters:
+            # Set the quince parameters, and keep references to the remaining parameters
+            # that cannot be set directly inside quince.
             new_node.base_params = {}
             for k, v in filt_par.items():
                 if k in new_node.parameters.keys():
@@ -130,7 +131,7 @@ def load_from_yaml(graphics_view):
             new_node.setOpacity(0.0)
             try:
                 # Sometimes the settings get gunked up...
-                stored_loc = graphics_view.settings.value("node_positions/" + filt_name + "_pos")
+                stored_loc = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos")
                 if stored_loc is not None and isinstance(stored_loc, QPointF):
                     new_node.setPos(stored_loc)
                 else:
@@ -138,7 +139,7 @@ def load_from_yaml(graphics_view):
             except:
                 print("Error when loading node position from QSettings...")
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.settings.setValue("node_positions/" + filt_name + "_pos", new_node.pos())
+                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos", new_node.pos())
             new_node.label.setPlainText(filt_name)
             loaded_filter_nodes[filt_name] = new_node
 
@@ -160,7 +161,7 @@ def load_from_yaml(graphics_view):
             
             try:
                 # Sometimes the settings get gunked up...
-                stored_loc = graphics_view.settings.value("node_positions/" + instr_name + "_pos")
+                stored_loc = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos")
                 if stored_loc is not None:
                     new_node.setPos(stored_loc)
                 else:
@@ -169,7 +170,7 @@ def load_from_yaml(graphics_view):
             except:
                 print("Error when loading node position from QSettings...", )
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.settings.setValue("node_positions/" + instr_name + "_pos", new_node.pos())
+                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos", new_node.pos())
             new_node.label.setPlainText(instr_name)
             loaded_instr_nodes[instr_name] = new_node
 
@@ -321,12 +322,12 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, 
                     node.add_parameter(quince_param)
             elif isinstance(obj_instance, Instrument):
                 # Add a single output connector for any digitizers
+                node.is_instrument = True
                 node.add_output(Connector('source', 'output'))
 
             # Set the class and module infor for PyQLab
             node.auspex_object = obj_instance
-            node.x__class__    = the_name
-            # node.x__module__   = x__module__
+            node.type = the_name
 
             # See if names will be duplicated
             node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]

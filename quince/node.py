@@ -49,12 +49,12 @@ class Node(QGraphicsRectItem):
         # Enabled by default
         self.enabled = True
 
-        # For PyQLab interoperability
-        self.x__class__    = None
-        self.x__module__   = None
+        # For auspex interoperability
+        self.type = None
+        self.is_instrument = False
         self.auspex_object = None
 
-        # Any additional json we should retain from PyQLab
+        # Any additional json we should retain
         self.base_params = None
 
         # Dividing line and collapse button
@@ -358,20 +358,18 @@ class Node(QGraphicsRectItem):
                 if conn_name == "source":
                     source_text.append(node_name)
                 else:
-                    source_text.append(node_name + ":" + conn_name)
+                    source_text.append(node_name + " " + conn_name)
 
-            dict_repr['data_source'] = ", ".join(source_text)
+            dict_repr['source'] = ", ".join(source_text)
         else:
-            dict_repr['data_source'] = ""
+            dict_repr['source'] = ""
 
         # data_source not applicable for digitizers
-        if self.x__module__ == 'instruments.Digitizers':
-            dict_repr.pop('data_source')
+        if self.is_instrument:
+            dict_repr.pop('source')
 
-        dict_repr['label']       = self.label.toPlainText()
-        dict_repr['enabled']     = self.enabled
-        dict_repr['x__class__']  = self.x__class__
-        dict_repr['x__module__'] = self.x__module__
+        dict_repr['enabled']  = self.enabled
+        dict_repr['type']     = self.type
         return dict_repr
 
 class TitleText(QGraphicsTextItem):
