@@ -42,6 +42,9 @@ class NodeScene(QGraphicsScene):
         self.backdrop = QGraphicsRectItem()
         self.backdrop.setRect(-10000,-10000,20000,20000)
         self.backdrop.setZValue(-100)
+
+        self.qr = QRectF(-10000,-10000,20000,20000)
+        self.setSceneRect(self.qr)
         self.setBackgroundBrush(QBrush(QColor(60,60,60)))
 
         self.addItem(self.backdrop)
@@ -204,6 +207,8 @@ class NodeView(QGraphicsView):
     def __init__(self, scene):
         super(NodeView, self).__init__(scene)
         self.scene = scene
+        self.centerOn(self.scene.qr.center())
+
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setRenderHint(QPainter.Antialiasing)
         self.current_scale = 1.0
