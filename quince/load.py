@@ -197,6 +197,9 @@ def load_from_yaml(graphics_view):
         for source in sources:
 
             source    = source.split()
+            if len(source) == 0:
+                continue
+
             node_name = source[0]
             conn_name = "source"
             if len(source) == 2:
