@@ -17,6 +17,7 @@ import importlib
 import pkgutil
 import inspect
 import sys
+from shutil import move
 
 import ruamel.yaml as yaml
 
@@ -49,9 +50,16 @@ class Include():
         return self.data.items()
     def keys(self):
         return self.data.keys()
+    def pop(self, key):
+        if key in self.keys():
+            return self.data.pop(key)
+        else:
+            raise KeyError("Could not find key {}".format(key))
     def write(self):
-        with open(self.filename, 'w') as fid:
+        with open(self.filename+".tmp", 'w') as fid:
             yaml.dump(self.data, fid, Dumper=yaml.RoundTripDumper)
+        # Upon success
+        move(self.filename+".tmp", self.filename)
 
 class Loader(yaml.RoundTripLoader):
     def __init__(self, stream):
@@ -86,9 +94,11 @@ def yaml_load(filename):
     return code, filenames
 
 def yaml_dump(data, filename):
-    with open(filename, 'w') as fid:
+    with open(filename+".tmp", 'w') as fid:
         Dumper.add_representer(Include, Dumper.include)
         yaml.dump(data, fid, Dumper=Dumper)
+    # Upon success
+    move(filename+".tmp", filename)
 
 def load_from_yaml(graphics_view):
 
