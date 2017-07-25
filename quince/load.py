@@ -131,15 +131,17 @@ def load_from_yaml(graphics_view):
             new_node.setOpacity(0.0)
             try:
                 # Sometimes the settings get gunked up...
-                stored_loc = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos")
-                if stored_loc is not None and isinstance(stored_loc, QPointF):
-                    new_node.setPos(stored_loc)
+                loc_x = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_x")
+                loc_y = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_y")
+                if isinstance(loc_x,float) and isinstance(loc_y,float):
+                    new_node.setPos(QPointF(loc_x, loc_y))
                 else:
                     new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
             except:
                 print("Error when loading node position from QSettings...")
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos", new_node.pos())
+                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos_x", new_node.pos().x())
+                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos_y", new_node.pos().y())
             new_node.label.setPlainText(filt_name)
             loaded_filter_nodes[filt_name] = new_node
 
@@ -161,16 +163,18 @@ def load_from_yaml(graphics_view):
             
             try:
                 # Sometimes the settings get gunked up...
-                stored_loc = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos")
-                if stored_loc is not None:
-                    new_node.setPos(stored_loc)
+                loc_x = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_x")
+                loc_y = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_y")
+                if isinstance(loc_x,float) and isinstance(loc_y,float):
+                    new_node.setPos(QPointF(loc_x, loc_y))
                 else:
                     new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
 
             except:
                 print("Error when loading node position from QSettings...", )
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos", new_node.pos())
+                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos_x", new_node.pos().x())
+                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos_y", new_node.pos().y())
             new_node.label.setPlainText(instr_name)
             loaded_instr_nodes[instr_name] = new_node
 

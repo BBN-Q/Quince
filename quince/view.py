@@ -144,7 +144,8 @@ class NodeScene(QGraphicsScene):
 
     def save_node_positions_to_settings(self):
         for n in [i for i in self.items() if isinstance(i, Node)]:
-            self.qt_settings.setValue("node_positions/" + n.label.toPlainText() + "_pos", n.pos())
+            self.qt_settings.setValue("node_positions/" + n.label.toPlainText() + "_pos_x", n.pos().x())
+            self.qt_settings.setValue("node_positions/" + n.label.toPlainText() + "_pos_y", n.pos().y())
         self.qt_settings.sync()
 
     def save_for_yaml(self):
@@ -161,9 +162,15 @@ class NodeScene(QGraphicsScene):
         # and other human-friendly conveniences.
         for node, node_name in zip(nodes, node_names):
             if node.is_instrument:
+                # Create a new entry if necessary
+                if node_name not in self.settings["instruments"].keys():
+                    self.settings["instruments"][node_name] = {}
                 for k, v in node.dict_repr().items():
                     self.settings["instruments"][node_name][k] = v
             else:
+                # Create a new entry if necessary
+                if node_name not in self.settings["filters"].keys():
+                    self.settings["filters"][node_name] = {}
                 for k, v in node.dict_repr().items():
                     self.settings["filters"][node_name][k] = v
 
