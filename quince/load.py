@@ -164,10 +164,11 @@ def load_from_yaml(graphics_view):
         if "rx_channels" not in instr_par.keys():
             continue
 
-        # See if the filter exists, and then create it
+        # See if the filter exists, and then create it.
+        # Assume filters are enabled unless otherwise noted.
         if hasattr(graphics_view, 'create_'+instr_type):
             new_node = getattr(graphics_view, 'create_'+instr_type)()
-            new_node.enabled = instr_par['enabled']
+            new_node.enabled = instr_par['enabled'] if 'enabled' in instr_par.keys() else True
             new_node.base_params = instr_par
             new_node.setOpacity(0.0)
             
