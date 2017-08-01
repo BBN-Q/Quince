@@ -177,10 +177,13 @@ class NodeScene(QGraphicsScene):
                 for k, v in node.dict_repr().items():
                     self.settings["filters"][node_name][k] = v
 
-        # Prune stale (deleted) items from the config
+        # Prune stale (deleted) filters from the config, but
+        # leave instruments other than digitizers alone
         for section in ("filters", "instruments"):
             for name in list(self.settings[section].keys()):
                 if name not in node_names:
+                    if section=="instruments" and "rx_channels" not in self.settings[section][name].keys():
+                        continue
                     self.settings[section].pop(name)
       
         self.window.ignore_file_updates = True
