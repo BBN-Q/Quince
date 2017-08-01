@@ -33,6 +33,9 @@ def items_on_subgraph(graph, node):
 def descendants(graph, node):
     return nx.descendants(graph, node)
 
+def graph_input_nodes(graph):
+    return [n for n in graph.nodes() if graph.in_degree(n) == 0]
+
 def create_experiment_graph(nodes, wires):
     exp = Experiment()
 
@@ -52,3 +55,31 @@ def create_experiment_graph(nodes, wires):
 
     print(exp)
     return exp
+
+def hierarchy_pos(G, root, width=600., vert_gap = 175, vert_loc = 0, xcenter = 0.0, 
+                  pos = None, parent = None):
+    '''from: http://stackoverflow.com/questions/29586520/can-one-get-hierarchical-graphs-from-networkx-with-python-3
+       If there is a cycle that is reachable from root, then this will see infinite recursion.
+       G: the graph
+       root: the root node of current branch
+       width: horizontal space allocated for this branch - avoids overlap with other branches
+       vert_gap: gap between levels of hierarchy
+       vert_loc: vertical location of root
+       xcenter: horizontal location of root
+       pos: a dict saying where all nodes go if they have been assigned
+       parent: parent of this branch.'''
+    if pos == None:
+        pos = {root:(xcenter,vert_loc)}
+    else:
+        pos[root] = (xcenter, vert_loc)
+    neighbors = G.neighbors(root)
+    if len(neighbors)!=0:
+        dx = width/len(neighbors) 
+        nextx = xcenter - width/2 - dx/2
+        for neighbor in neighbors:
+            nextx += dx
+            pos = hierarchy_pos(G,neighbor, width = dx, vert_gap = vert_gap, 
+                                vert_loc = vert_loc-vert_gap, xcenter=nextx, pos=pos, 
+                                parent = root)
+    return pos
+
