@@ -143,10 +143,10 @@ def load_from_yaml(graphics_view):
                 # Sometimes the settings get gunked up...
                 loc_x = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_x")
                 loc_y = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_y")
-                if isinstance(loc_x,float) and isinstance(loc_y,float):
-                    new_node.setPos(QPointF(loc_x, loc_y))
-                else:
-                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+                # Windows is very confused about this data type:
+                loc_x = float(loc_x)
+                loc_y = float(loc_y)
+                new_node.setPos(QPointF(loc_x, loc_y))
             except:
                 print("Error when loading node position from QSettings...")
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
@@ -176,11 +176,10 @@ def load_from_yaml(graphics_view):
                 # Sometimes the settings get gunked up...
                 loc_x = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_x")
                 loc_y = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_y")
-                if isinstance(loc_x,float) and isinstance(loc_y,float):
-                    new_node.setPos(QPointF(loc_x, loc_y))
-                else:
-                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-
+                # Windows is very confused about this data type:
+                loc_x = float(loc_x)
+                loc_y = float(loc_y)
+                new_node.setPos(QPointF(loc_x, loc_y))
             except:
                 print("Error when loading node position from QSettings...", )
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
