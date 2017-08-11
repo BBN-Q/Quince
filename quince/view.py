@@ -135,6 +135,9 @@ class NodeScene(QGraphicsScene):
         load_from_yaml(self)
 
     def reload_yaml(self):
+        # Store node settings before reloading
+        self.save_node_positions_to_settings()
+
         # Don't retain any undo information, since it is outdated
         self.undo_stack.clear()
 
@@ -358,6 +361,13 @@ class NodeWindow(QMainWindow):
         self.main_widget.setLayout(self.hbox)
 
         self.setCentralWidget(self.main_widget)
+
+        # Establish automatic QSettings update timer that
+        # writes the node positions every 3s
+        self.settings_timer = QTimer(self)
+        self.settings_timer.setInterval(3000)
+        self.settings_timer.timeout.connect(self.scene.save_node_positions_to_settings)
+        self.settings_timer.start()
 
         # Create the pipeline start node if possible
         if hasattr(self.scene, 'create_PipelineStart'):
