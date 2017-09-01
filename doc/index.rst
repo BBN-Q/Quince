@@ -23,7 +23,8 @@ Quince requires:
 - Python 3
 - PyQt5
 - networkx
-- JSONLibraryUtils
+- ruamel.yaml >= 0.15.18
+- Auspex 
 
 We recommend using an anaconda installation on windows, while there are a
 variety of viable approaches on Linux/MacOS. Quince can be cloned from GitHub::
@@ -39,13 +40,8 @@ Then you may install Quince via pip::
 Populating the Node Menus
 *************************
 
-Quince generates its menus by parsing json node description files. To
-automatically generate these files for *Auspex* filters, ensure that *Auspex* is
-on the path and then run::
-
-	./find_filters.py
-
-to create and populate the auspex-nodes folder.
+Quince automatically generates its nodes by walking the auspex modules. To perform this
+function, Auspex must be on the python path. 
 
 
 Contents:

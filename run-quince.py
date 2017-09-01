@@ -18,15 +18,13 @@ from quince.view import *
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--measFile',  type=str, help='Measurement Library File')
-    parser.add_argument('-s', '--sweepFile', type=str, help='Sweep Library File')
-    parser.add_argument('-i', '--instrFile', type=str, help='Instrument Library File')
+    parser.add_argument('filename',  type=str, help='Measurement library filename')
 
     args = parser.parse_args()
 
     app = QApplication([])
     window = NodeWindow()
-    window.load_pyqlab(measFile=args.measFile, sweepFile=args.sweepFile, instrFile=args.instrFile)
+    window.load_yaml(args.filename)
     app.aboutToQuit.connect(window.cleanup)
     window.show()
 

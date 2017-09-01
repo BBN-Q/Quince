@@ -14,7 +14,7 @@ Full documentation can be found at [Read the Docs](http://quince.readthedocs.io/
 2. [PyQt5](https://www.riverbankcomputing.com/software/pyqt/intro)
 3. [QtPy](https://github.com/spyder-ide/qtpy)
 4. [networkx](https://networkx.github.io/)
-5. [JSONLibraryUtils](https://github.com/BBN-Q/JSONLibraryUtils)
+5. [ruamel.yaml](https://pypi.python.org/pypi/ruamel.yaml)
 6. [Auspex](https://github.com/BBN-Q/auspex) - necessary for populating filter and instrument nodes
 
 ## Funding

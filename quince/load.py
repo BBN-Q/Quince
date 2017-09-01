@@ -13,11 +13,13 @@ from qtpy.QtWidgets import *
 from .node import *
 
 import os, os.path
-import json
 import importlib
 import pkgutil
 import inspect
 import sys
+from shutil import move
+
+import ruamel.yaml as yaml
 
 from functools import partial
 
@@ -35,44 +37,102 @@ except ImportError as e:
     NO_AUSPEX = True
     print("Failed to load Auspex with error '{}'. There will be no nodes.".format(str(e)))
 
-def load_from_pyqlab(graphics_view):
+class Include():
+    def __init__(self, filename):
+        self.filename = filename
+        with open(filename, 'r') as f:
+            self.data = yaml.load(f, Loader=yaml.RoundTripLoader)
+    def __getitem__(self, key):
+        return self.data[key]
+    def __setitem__(self, key, value):
+        self.data[key] = value
+    def items(self):
+        return self.data.items()
+    def keys(self):
+        return self.data.keys()
+    def pop(self, key):
+        if key in self.keys():
+            return self.data.pop(key)
+        else:
+            raise KeyError("Could not find key {}".format(key))
+    def write(self):
+        with open(self.filename+".tmp", 'w') as fid:
+            yaml.dump(self.data, fid, Dumper=yaml.RoundTripDumper)
+        # Upon success
+        move(self.filename+".tmp", self.filename)
+
+class Loader(yaml.RoundTripLoader):
+    def __init__(self, stream):
+        try:
+            self._root = os.path.split(stream.name)[0]
+        except AttributeError:
+            self._root = os.path.curdir
+        super().__init__(stream)
+        self.filenames = []
+
+    def include(self, node):
+        shortname = self.construct_scalar(node)
+        filename = os.path.abspath(os.path.join(
+            self._root, shortname
+        ))
+        self.filenames.append(filename)
+        return Include(filename)
+
+class Dumper(yaml.RoundTripDumper):
+    def include(self, data):
+        data.write()
+        return self.represent_scalar(u'!include', data.filename)
+
+def yaml_load(filename):
+    with open(filename, 'r') as fid:
+        Loader.add_constructor('!include', Loader.include)
+        load = Loader(fid)
+        code = load.get_single_data()
+        filenames = load.filenames
+        load.dispose()
+    filenames.append(os.path.abspath(filename))
+    return code, filenames
+
+def yaml_dump(data, filename):
+    with open(filename+".tmp", 'w') as fid:
+        Dumper.add_representer(Include, Dumper.include)
+        yaml.dump(data, fid, Dumper=Dumper)
+    # Upon success
+    move(filename+".tmp", filename)
+
+def load_from_yaml(graphics_view):
 
     name_changes = {'KernelIntegration': 'KernelIntegrator',
                     'DigitalDemod': 'Channelizer'}
 
-    with open(graphics_view.window.measFile, 'r') as FID:
-        settings = json.load(FID)
-        graphics_view.meas_settings = settings["filterDict"]
-        graphics_view.meas_settings_version = settings["version"]
+    graphics_view.settings, _     = yaml_load(graphics_view.window.meas_file)
+    graphics_view.filter_settings = graphics_view.settings["filters"]
+    graphics_view.instr_settings  = graphics_view.settings["instruments"]
 
-    with open(graphics_view.window.instrFile, 'r') as FID:
-        settings = json.load(FID)
-        graphics_view.instr_settings = settings["instrDict"]
-        graphics_view.instr_settings_version = settings["version"]
-
-    with open(graphics_view.window.sweepFile, 'r') as FID:
-        graphics_view.sweep_settings = json.load(FID)["sweepDict"]
-
-    loaded_measure_nodes = {} # Keep track of nodes we create
-    loaded_instr_nodes = {} # Keep track of nodes we create
+    loaded_filter_nodes = {} # Keep track of nodes we create
+    loaded_instr_nodes  = {} # Keep track of nodes we create
     new_wires = []
 
     # Create and place the filters
-    for meas_par in graphics_view.meas_settings.values():
+    for filt_name, filt_par in graphics_view.filter_settings.items():
 
-        meas_name = meas_par["label"]
-        meas_type = meas_par["x__class__"]
+        filt_type = filt_par["type"]
         # Perform some translation
-        if meas_type in name_changes.keys():
-            meas_type = name_changes[meas_type]
+        if filt_type in name_changes.keys():
+            filt_type = name_changes[filt_type]
         # See if the filter exists, and then create it
-        if hasattr(graphics_view, 'create_'+meas_type):
-            new_node = getattr(graphics_view, 'create_'+meas_type)()
-            new_node.enabled = meas_par['enabled']
+        if hasattr(graphics_view, 'create_'+filt_type):
+            new_node = getattr(graphics_view, 'create_'+filt_type)()
 
-            # Set the parameters:
+            # Enabled unless otherwise specified
+            if 'enabled' not in filt_par.keys():
+                filt_par['enabled'] = True
+            new_node.enabled = filt_par['enabled']
+
+            # Set the quince parameters, and keep references to the remaining parameters
+            # that cannot be set directly inside quince.
             new_node.base_params = {}
-            for k, v in meas_par.items():
+            for k, v in filt_par.items():
                 if k in new_node.parameters.keys():
                     new_node.parameters[k].set_value(v)
                 else:
@@ -81,67 +141,72 @@ def load_from_pyqlab(graphics_view):
             new_node.setOpacity(0.0)
             try:
                 # Sometimes the settings get gunked up...
-                stored_loc = graphics_view.settings.value("node_positions/" + meas_name + "_pos")
-                if stored_loc is not None and isinstance(stored_loc, QPointF):
-                    new_node.setPos(stored_loc)
-                else:
-                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
+                loc_x = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_x")
+                loc_y = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_y")
+                # Windows is very confused about this data type:
+                loc_x = float(loc_x)
+                loc_y = float(loc_y)
+                new_node.setPos(QPointF(loc_x, loc_y))
             except:
                 print("Error when loading node position from QSettings...")
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.settings.setValue("node_positions/" + meas_name + "_pos", new_node.pos())
-            new_node.label.setPlainText(meas_name)
-            loaded_measure_nodes[meas_name] = new_node
+                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos_x", new_node.pos().x())
+                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos_y", new_node.pos().y())
+            new_node.label.setPlainText(filt_name)
+            loaded_filter_nodes[filt_name] = new_node
 
     # Create and place the instruments
-    for instr_par in graphics_view.instr_settings.values():
-        instr_name = instr_par["label"]
-        instr_type = instr_par["x__class__"]
+    for instr_name, instr_par in graphics_view.instr_settings.items():
+
+        instr_type = instr_par["type"]
 
         # Put only digitizers on the graph
-        if instr_par["x__module__"] != "instruments.Digitizers":
+        if "rx_channels" not in instr_par.keys():
             continue
 
-        # See if the filter exists, and then create it
+        # See if the filter exists, and then create it.
+        # Assume filters are enabled unless otherwise noted.
         if hasattr(graphics_view, 'create_'+instr_type):
             new_node = getattr(graphics_view, 'create_'+instr_type)()
-            new_node.enabled = instr_par['enabled']
+            new_node.enabled = instr_par['enabled'] if 'enabled' in instr_par.keys() else True
             new_node.base_params = instr_par
             new_node.setOpacity(0.0)
             
             try:
                 # Sometimes the settings get gunked up...
-                stored_loc = graphics_view.settings.value("node_positions/" + instr_name + "_pos")
-                if stored_loc is not None:
-                    new_node.setPos(stored_loc)
-                else:
-                    new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-
+                loc_x = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_x")
+                loc_y = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_y")
+                # Windows is very confused about this data type:
+                loc_x = float(loc_x)
+                loc_y = float(loc_y)
+                new_node.setPos(QPointF(loc_x, loc_y))
             except:
                 print("Error when loading node position from QSettings...", )
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.settings.setValue("node_positions/" + instr_name + "_pos", new_node.pos())
+                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos_x", new_node.pos().x())
+                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos_y", new_node.pos().y())
             new_node.label.setPlainText(instr_name)
             loaded_instr_nodes[instr_name] = new_node
 
-    for name, node in loaded_measure_nodes.items():
-        meas_name = graphics_view.meas_settings[name]["label"]
+    for filt_name, node in loaded_filter_nodes.items():
+        """Get the source name. If it contains a colon, then the part before the colon
+        is the node name and the part after is the connector name. Otherwise, the
+        connector name is just "source" and the source name is the node name."""
 
-        # Get the source name. If it contains a colon, then the part before the colon
-        # is the node name and the part after is the connector name. Otherwise, the
-        # connector name is just "source" and the source name is the node name.
+        sources = [s.strip() for s in graphics_view.filter_settings[filt_name]["source"].split(",")]
+        for source in sources:
 
-        data_sources = [s.strip() for s in graphics_view.meas_settings[name]["data_source"].split(",")]
-        for data_source in data_sources:
+            source    = source.split()
+            if len(source) == 0:
+                continue
 
-            source    = data_source.split(":")
             node_name = source[0]
             conn_name = "source"
             if len(source) == 2:
                 conn_name = source[1]
 
-            if node_name in loaded_measure_nodes.keys():
-                start_node = loaded_measure_nodes[node_name]
+            if node_name in loaded_filter_nodes.keys():
+                start_node = loaded_filter_nodes[node_name]
                 if conn_name in start_node.outputs.keys():
                     if 'sink' in node.inputs.keys():
                         # Create wire and register with scene
@@ -159,7 +224,7 @@ def load_from_pyqlab(graphics_view):
                         new_wire.set_end(node.inputs['sink'].scenePos())
                         node.inputs['sink'].wires_in.append(new_wire)
                     else:
-                        print("Could not find sink connector in", meas_name)
+                        print("Could not find sink connector in", filt_name)
                 else:
                     print("Could not find source connector ", conn_name, "for node", node_name)
 
@@ -184,11 +249,11 @@ def load_from_pyqlab(graphics_view):
                     else:
                         print("Could not find sink connector ", conn_name)
             else:
-                print("Could not find data_source")
+                print("Could not find source for ", filt_name, ":", node_name, conn_name)
 
     # Stick everything in an animation group and ramp the opacity up to 1 (fade in)
     graphics_view.anim_group = QParallelAnimationGroup()
-    for item in new_wires + list(loaded_instr_nodes.values()) + list(loaded_measure_nodes.values()):
+    for item in new_wires + list(loaded_instr_nodes.values()) + list(loaded_filter_nodes.values()):
         dummy = dummy_object_float(item.opacity, item.setOpacity)
         anim = QPropertyAnimation(dummy, bytes("dummy".encode("ascii")))
         anim.setDuration(300)
@@ -197,91 +262,7 @@ def load_from_pyqlab(graphics_view):
         graphics_view.anim_group.addAnimation(anim)
     graphics_view.anim_group.start()
 
-def parse_node_file(filename, graphics_view):
-    with open(filename) as data_file:
-        cat  = os.path.basename(os.path.dirname(filename))
-        data = json.load(data_file)
-
-        # Create a QAction and add to the menu
-        action = QAction(data['name'], graphics_view)
-
-        # Create function for dropping node on canvas
-        def create(the_data, cat_name):
-            node = Node(the_data['name'], graphics_view)
-            node.cat_name = cat_name
-            for op in the_data['outputs']:
-                node.add_output(Connector(op, 'output'))
-            for ip in the_data['inputs']:
-                node.add_input(Connector(ip, 'input'))
-            for p in the_data['parameters']:
-                if p['type'] == 'str':
-                    pp = StringParameter(p['name'])
-                elif p['type'] == 'filename':
-                    pp = FilenameParameter(p['name'])
-                elif p['type'] == 'float':
-                    pp = NumericalParameter(p['name'], float, p['low'], p['high'], p['increment'], p['snap'])
-                elif p['type'] == 'int':
-                    pp = NumericalParameter(p['name'], int, p['low'], p['high'], p['increment'], p['snap'])
-                elif p['type'] == 'combo':
-                    pp = ComboParameter(p['name'], p['choices'])
-                elif p['type'] == 'boolean':
-                    pp = BooleanParameter(p['name'])
-
-                if 'default' in p.keys():
-                    pp.set_value(p['default'])
-
-                pp.has_input = False
-
-                # # Generally, combo, bool, file parameters have no input connectors
-                # if p['type'] in ['combo', 'boolean', 'filename']:
-                #     pp.has_input = False
-
-                # # If the has_input value is set in the json, pay attention
-                # if 'has_input' in p.keys():
-                #     pp.has_input = p['has_input']
-
-                # Special parameters cannot be directly edited
-                if 'interactive' in p.keys():
-                    pp.set_interactive(p['interactive'])
-
-                node.add_parameter(pp)
-
-            # Connector constraints
-            if 'allowed_destinations' in the_data.keys():
-                node.allowed_destinations = the_data['allowed_destinations']
-
-            # Set the class and module infor for PyQLab
-            node.x__class__  = the_data['x__class__']
-            node.x__module__ = the_data['x__module__']
-
-            # Custom coloring
-            if cat_name == "Inputs":
-                node.set_title_color(QColor(80,100,70))
-            elif cat_name == "Outputs":
-                node.set_title_color(QColor(120,70,70))
-            # See if names will be duplicated
-            node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]
-            nan = next_available_name(node_names, the_data['name'])
-            node.label.setPlainText(nan)
-
-            node.setPos(graphics_view.backdrop.mapFromParent(graphics_view.last_click))
-            node.setPos(graphics_view.last_click)
-            graphics_view.addItem(node)
-            return node
-
-        # Add to class
-        name = "create_"+("".join(data['name'].split()))
-        setattr(graphics_view, name, partial(create, data, cat))
-        func = getattr(graphics_view, name)
-
-        # Connect trigger for action
-        def create_command(name=name,func=func,graphics_view=graphics_view):
-            graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
-        action.triggered.connect(create_command)
-        graphics_view.sub_menus[cat].addAction(action)
-
-
-def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, submenu=None, mod_filter=None):
+def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, mod_filter=None):
     new_objects = {n: f for n, f in mod.__dict__.items() if inspect.isclass(f)
                                                             and issubclass(f, base_class)
                                                             and f != base_class}
@@ -358,12 +339,12 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, x__module__, s
                     node.add_parameter(quince_param)
             elif isinstance(obj_instance, Instrument):
                 # Add a single output connector for any digitizers
+                node.is_instrument = True
                 node.add_output(Connector('source', 'output'))
 
             # Set the class and module infor for PyQLab
             node.auspex_object = obj_instance
-            node.x__class__    = the_name
-            node.x__module__   = x__module__
+            node.type = the_name
 
             # See if names will be duplicated
             node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]
@@ -406,7 +387,7 @@ def parse_quince_modules(graphics_view):
 
     for mod_name in sorted(filter_modules.keys(), key=lambda s: s.lower()):
         mod = filter_modules[mod_name]
-        parse_quince_module(mod_name, mod, Filter, graphics_view, "MeasFilters")
+        parse_quince_module(mod_name, mod, Filter, graphics_view)
 
     graphics_view.menu.addSeparator()
     graphics_view.instruments_menu = graphics_view.menu.addMenu("instruments")
@@ -414,6 +395,6 @@ def parse_quince_modules(graphics_view):
 
     for mod_name in sorted(instrument_modules.keys(), key=lambda s: s.lower()):
         mod = instrument_modules[mod_name]
-        parse_quince_module(mod_name, mod, Instrument, graphics_view, "instruments.Digitizers",
+        parse_quince_module(mod_name, mod, Instrument, graphics_view,
                             submenu=graphics_view.instruments_menu,
-                            mod_filter=lambda m: hasattr(m, 'instrument_type') and m.instrument_type == "Digitizer")
+                            mod_filter=lambda m: hasattr(m, 'instrument_type') and "Digitizer" in m.instrument_type)

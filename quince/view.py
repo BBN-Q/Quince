@@ -9,8 +9,6 @@ from qtpy.QtCore import *
 from qtpy.QtSvg import *
 from qtpy.QtWidgets import *
 
-from JSONLibraryUtils.FileWatcher import LibraryFileWatcher
-import json
 import glob
 import time
 import os.path
@@ -44,6 +42,9 @@ class NodeScene(QGraphicsScene):
         self.backdrop = QGraphicsRectItem()
         self.backdrop.setRect(-10000,-10000,20000,20000)
         self.backdrop.setZValue(-100)
+
+        self.qr = QRectF(-10000,-10000,20000,20000)
+        self.setSceneRect(self.qr)
         self.setBackgroundBrush(QBrush(QColor(60,60,60)))
 
         self.addItem(self.backdrop)
@@ -60,7 +61,7 @@ class NodeScene(QGraphicsScene):
 
         self.last_click = self.backdrop.pos()
 
-        self.settings = QSettings("BBN", "Quince")
+        self.qt_settings = QSettings("BBN", "Quince")
 
         self.undo_stack = QUndoStack(self)
 
@@ -127,26 +128,16 @@ class NodeScene(QGraphicsScene):
         self.open_add_menu(event.screenPos())
 
     def generate_menus(self):
-
-        # Load nodes from JSON
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "nodes")
-        node_files = sorted(glob.glob(path+'/*/*.json'))
-        categories = set([os.path.basename(os.path.dirname(nf)) for nf in node_files])
-
-        for cat in sorted(categories, key=lambda s: s.lower()):
-            sm = self.menu.addMenu(cat)
-            self.sub_menus[cat] = sm
-
-        for nf in node_files:
-            parse_node_file(nf, self)
-
         # Parse Auspex directly
         parse_quince_modules(self)
 
-    def load_pyqlab(self):
-        load_from_pyqlab(self)
+    def load_yaml(self):
+        load_from_yaml(self)
 
-    def reload_pyqlab(self):
+    def reload_yaml(self):
+        # Store node settings before reloading
+        self.save_node_positions_to_settings()
+
         # Don't retain any undo information, since it is outdated
         self.undo_stack.clear()
 
@@ -155,52 +146,52 @@ class NodeScene(QGraphicsScene):
         wires = [i for i in self.items() if isinstance(i, Wire)]
         for o in nodes+wires:
             self.removeItem(o)
-        self.load_pyqlab()
+        self.load_yaml()
 
     def save_node_positions_to_settings(self):
         for n in [i for i in self.items() if isinstance(i, Node)]:
-            self.settings.setValue("node_positions/" + n.label.toPlainText() + "_pos", n.pos())
-        self.settings.sync()
+            self.qt_settings.setValue("node_positions/" + n.label.toPlainText() + "_pos_x", n.pos().x())
+            self.qt_settings.setValue("node_positions/" + n.label.toPlainText() + "_pos_y", n.pos().y())
+        self.qt_settings.sync()
 
-    def save_for_pyqlab(self):
+    def save_for_yaml(self):
         self.save_node_positions_to_settings()
 
-        nodes  = [i for i in self.items() if isinstance(i, Node)]
+        nodes      = [i for i in self.items() if isinstance(i, Node)]
+        node_names = [n.label.toPlainText() for n in nodes]
 
-        if not hasattr(self, 'meas_settings'):
-            self.window.set_status("Not launched from PyQLab, and therefore cannot save to PyQLab JSON.")
+        if not hasattr(self, 'settings'):
+            self.window.set_status("Not launched with yaml config. Cannot save to yaml.")
             return
-        with open(self.window.measFile, 'w') as df:
-            data = {}
-            data["filterDict"]  = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'MeasFilters'}
-            data["version"]     = self.meas_settings_version
-            data["x__class__"]  = "MeasFilterLibrary"
-            data["x__module__"] = "MeasFilters"
 
-            self.window.ignore_file_updates = True
-            self.window.ignore_timer.start()
-            json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
-        
-        with open(self.window.instrFile, 'w') as df:
-            data = {}
-            data["instrDict"]  = self.instr_settings
-            data["version"]     = self.instr_settings_version
-            data["x__class__"]  = "InstrumentLibrary"
-            data["x__module__"] = "instruments.InstrumentManager"
+        # Start from the original config file in order that we can save comments
+        # and other human-friendly conveniences.
+        for node, node_name in zip(nodes, node_names):
+            if node.is_instrument:
+                # Create a new entry if necessary
+                if node_name not in self.settings["instruments"].keys():
+                    self.settings["instruments"][node_name] = {}
+                for k, v in node.dict_repr().items():
+                    self.settings["instruments"][node_name][k] = v
+            else:
+                # Create a new entry if necessary
+                if node_name not in self.settings["filters"].keys():
+                    self.settings["filters"][node_name] = {}
+                for k, v in node.dict_repr().items():
+                    self.settings["filters"][node_name][k] = v
 
-            # Strip any old digitizers
-            for name in list(data["instrDict"].keys()):
-                if data["instrDict"][name]['x__module__'] == 'instruments.Digitizers':
-                    data["instrDict"].pop(name)
-
-            # Replace the digitizers, since that's all quince cares about for the moment
-            digitizers = {n.label.toPlainText(): n.dict_repr() for n in nodes if n.x__module__ == 'instruments.Digitizers'}
-            for name, dict_repr in digitizers.items():
-                data["instrDict"][name] = dict_repr
-
-            self.window.ignore_file_updates = True
-            self.window.ignore_timer.start()
-            json.dump(data, df, sort_keys=True, indent=4, separators=(',', ': '))
+        # Prune stale (deleted) filters from the config, but
+        # leave instruments other than digitizers alone
+        for section in ("filters", "instruments"):
+            for name in list(self.settings[section].keys()):
+                if name not in node_names:
+                    if section=="instruments" and "rx_channels" not in self.settings[section][name].keys():
+                        continue
+                    self.settings[section].pop(name)
+      
+        self.window.ignore_file_updates = True
+        self.window.ignore_timer.start()
+        yaml_dump(self.settings, self.window.meas_file)
 
     def create_node_by_name(self, name):
         create_node_func_name = "create_"+("".join(name.split()))
@@ -222,6 +213,8 @@ class NodeView(QGraphicsView):
     def __init__(self, scene):
         super(NodeView, self).__init__(scene)
         self.scene = scene
+        self.centerOn(self.scene.qr.center())
+
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setRenderHint(QPainter.Antialiasing)
         self.current_scale = 1.0
@@ -369,6 +362,13 @@ class NodeWindow(QMainWindow):
 
         self.setCentralWidget(self.main_widget)
 
+        # Establish automatic QSettings update timer that
+        # writes the node positions every 3s
+        self.settings_timer = QTimer(self)
+        self.settings_timer.setInterval(3000)
+        self.settings_timer.timeout.connect(self.scene.save_node_positions_to_settings)
+        self.settings_timer.start()
+
         # Create the pipeline start node if possible
         if hasattr(self.scene, 'create_PipelineStart'):
             ps = self.scene.create_PipelineStart()
@@ -402,22 +402,19 @@ class NodeWindow(QMainWindow):
     def debug(self):
         import ipdb; ipdb.set_trace()
 
-    def load_pyqlab(self, measFile=None, sweepFile=None, instrFile=None):
-        if None in [measFile, sweepFile, instrFile]:
-            self.set_status("Did not receive all relevant files from PyQLab.")
-            return
+    def load_yaml(self, meas_file):
+        self.set_status("Loading YAML configuration files...")
 
-        self.set_status("Loading PyQLab configuration files...")
+        self.meas_file  = meas_file
 
-        self.measFile  = measFile
-        self.sweepFile = sweepFile
-        self.instrFile = instrFile
+        # Perform a preliminary loading to find all of the connected files...
+        _, self.filenames = yaml_load(self.meas_file)
 
         # Delay timer to avoid multiple firings
         self.update_timer = QTimer(self)
         self.update_timer.setSingleShot(True)
         self.update_timer.setInterval(100)
-        self.update_timer.timeout.connect(self.update_pyqlab)
+        self.update_timer.timeout.connect(self.update_yaml)
 
         # Delay timer to avoid multiple firings
         self.ignore_file_updates = False
@@ -428,25 +425,25 @@ class NodeWindow(QMainWindow):
 
         # Establish File Watchers for these config files:
         self.watcher = QFileSystemWatcher()
-        for f in [measFile, sweepFile, instrFile]:
+        for f in self.filenames:
             self.watcher.addPath(f)
-        self.watcher.fileChanged.connect(self.pyqlab_needs_update)
+        self.watcher.fileChanged.connect(self.yaml_needs_update)
 
         self.update_timer.start()
 
     def stop_ignoring_updates(self):
         self.ignore_file_updates = False
 
-    def pyqlab_needs_update(self, path):
+    def yaml_needs_update(self, path):
         if not self.update_timer.isActive() and not self.ignore_file_updates:
             self.update_timer.start()
 
-    def update_pyqlab(self):
+    def update_yaml(self):
         self.set_status("Files changed on disk, reloading.")
-        self.scene.reload_pyqlab()
+        self.scene.reload_yaml()
 
     def save(self):
-        self.scene.save_for_pyqlab()
+        self.scene.save_for_yaml()
 
     def undo(self):
         self.scene.undo_stack.undo()
