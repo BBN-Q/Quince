@@ -23,6 +23,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     app = QApplication([])
+    
+    # Setup icon
+    png_path = os.path.join(os.path.dirname(__file__), "assets/quince_icon.png")
+    app.setWindowIcon(QIcon(png_path))
+
     window = NodeWindow()
     window.load_yaml(args.filename)
     app.aboutToQuit.connect(window.cleanup)
