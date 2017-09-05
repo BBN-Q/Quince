@@ -19,7 +19,13 @@ import inspect
 import sys
 from shutil import move
 
-import ruamel.yaml as yaml
+try:
+    import ruamel.yaml as yaml
+except:
+    try:
+        import ruamel_yaml as yaml
+    except:
+        raise Exception("Could not find ruamel.yaml or ruamel_yaml")
 
 from functools import partial
 
