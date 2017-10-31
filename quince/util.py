@@ -16,11 +16,11 @@ def next_available_name(node_names, label):
 		match_attempts = [re.match(label+' (\d+)', nn) for nn in node_names]
 		match_attempts[:] = [int(m.group(1)) for m in match_attempts if m != None]
 		if len(match_attempts) == 0:
-			return label+" 1"
+			return label+"-1"
 		else:
-			return label+" {:d}".format(sorted(match_attempts)[-1]+1)
+			return label+"-{:d}".format(sorted(match_attempts)[-1]+1)
 	except:
-		return label + ' ?'
+		return label + '-?'
 
 def strip_numbers(label):
 	try:
@@ -39,7 +39,7 @@ class dummy_object_QPointF(QObject):
 		return self.getter()
 	def dummy_set(self, value):
 		self.setter(value)
-	dummy = Property(QPointF, dummy_get, dummy_set) 
+	dummy = Property(QPointF, dummy_get, dummy_set)
 
 class dummy_object_float(QObject):
 	"""Fake object for animation purposes"""
@@ -50,4 +50,4 @@ class dummy_object_float(QObject):
 		return self.getter()
 	def dummy_set(self, value):
 		self.setter(value)
-	dummy = Property(float, dummy_get, dummy_set) 
+	dummy = Property(float, dummy_get, dummy_set)
