@@ -19,7 +19,7 @@ from quince.view import *
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('filename',  type=str, help='Measurement library filename')
+    parser.add_argument('filename', type=str, nargs='?', help='Measurement library filename', default=None)
 
     args = parser.parse_args()
 
@@ -36,7 +36,13 @@ if __name__ == "__main__":
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     window = NodeWindow()
-    window.load_yaml(args.filename)
+    if args.filename:
+        window.load_yaml(args.filename)
+    elif os.getenv('BBN_MEAS_FILE'):
+        window.load_yaml(os.getenv('BBN_MEAS_FILE'))
+    else:
+        print("No filename supplied, and could not locate BBN_MEAS_FILE environment variable.")
+        window.load_yaml(None)
     app.aboutToQuit.connect(window.cleanup)
     window.show()
 

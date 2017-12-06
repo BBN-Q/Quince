@@ -31,8 +31,8 @@ from functools import partial
 
 NO_AUSPEX = False
 try:
-    import auspex.globals
-    auspex.globals.auspex_dummy_mode = True
+    import auspex.config
+    auspex.config.auspex_dummy_mode = True
     import auspex
     import auspex.filters as auspex_filt
     import auspex.instruments as instr
