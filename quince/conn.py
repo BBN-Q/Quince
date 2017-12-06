@@ -108,3 +108,7 @@ class Connector(QGraphicsEllipseItem):
         exclude = list(self.parent.inputs.values())
         nearest = self.scene().connectors_nearby(event.scenePos(), exclude=exclude)
         self.temp_wire.decide_drop(nearest)
+
+class CompositeConnector(Connector):
+    def __init__(self, name, connector_type, parent=None):
+        super(CompositeConnector, self).__init__(name, connector_type, parent=parent)

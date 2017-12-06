@@ -111,13 +111,25 @@ def load_from_yaml(graphics_view):
     name_changes = {'KernelIntegration': 'KernelIntegrator',
                     'DigitalDemod': 'Channelizer'}
 
-    graphics_view.settings, _     = yaml_load(graphics_view.window.meas_file)
-    graphics_view.filter_settings = graphics_view.settings["filters"]
-    graphics_view.instr_settings  = graphics_view.settings["instruments"]
+    graphics_view.settings, _        = yaml_load(graphics_view.window.meas_file)
+    graphics_view.filter_settings    = graphics_view.settings["filters"]
+    graphics_view.instr_settings     = graphics_view.settings["instruments"]
+    graphics_view.composite_settings = graphics_view.settings.get("composites", None)
 
-    loaded_filter_nodes = {} # Keep track of nodes we create
-    loaded_instr_nodes  = {} # Keep track of nodes we create
-    new_wires = []
+    # Process the composite nodes and create menu items
+    if graphics_view.composite_settings:
+        print('asdas')
+        parse_composite_nodes(graphics_view)
+
+    # Keep track of nodes we create
+    loaded_filter_nodes    = {}
+    loaded_instr_nodes     = {} 
+    loaded_composite_nodes = {}
+    new_wires              = []
+
+    # # Create Node representations of composite nodes
+    # for comp_name, comp_par in graphics_view.composite_settings.items():
+
 
     # Create and place the filters
     for filt_name, filt_par in graphics_view.filter_settings.items():
@@ -267,6 +279,76 @@ def load_from_yaml(graphics_view):
         anim.setEndValue(1.0)
         graphics_view.anim_group.addAnimation(anim)
     graphics_view.anim_group.start()
+
+def parse_composite_nodes(graphics_view):
+    comp_settings = graphics_view.composite_settings
+
+    # Add composites submenu
+    graphics_view.menu.addSeparator()
+    graphics_view.composites_menu = graphics_view.menu.addMenu("Composite Nodes")
+    graphics_view.sub_menus["composites"] = graphics_view.composites_menu
+
+    # Create creation functions and actions for each type
+    for comp_name in sorted(comp_settings.keys()):
+        comp = comp_settings[comp_name]
+
+        # Create a QAction and add to the menu
+        action = QAction(comp_name, graphics_view)
+
+        # Create function for dropping node on canvas
+        def create(settings, the_name):
+            node = CompositeNode(the_name, graphics_view)
+            node.cat_name = "composites"
+
+            auspex_filter_objects = {}
+            for filt_name, filt_set in settings["filters"].items():
+                auspex_filter_objects[filt_name] = None
+
+            # Add connectors based on the Filter's stated inputs and outputs
+            for s in settings["outputs"]:
+                node_name, conn_name = s.split()
+                conn = CompositeConnector(conn_name, 'output')
+                # TODO: associate with auspex object
+                conn.auspex_object = None
+                node.add_output(conn)
+            for s in settings["inputs"]:
+                node_name, conn_name = s.split()
+                conn = CompositeConnector(conn_name, 'input')
+                # TODO: associate with auspex object
+                conn.auspex_object = None
+                node.add_input(conn)
+            for s in settings["parameters"]:
+                node_name, param_name = s.split()
+                quince_param = StringParameter(param_name)
+                # TODO: dig into the auspex objects
+                quince_param.has_input = False
+                # quince_param.auspex_object = auspex_param
+                node.add_parameter(quince_param)
+
+            # Set the class and module info
+            # node.auspex_object = obj_instance
+            node.type = the_name
+
+            # See if names will be duplicated
+            node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]
+            nan = next_available_name(node_names, the_name)
+            node.label.setPlainText(nan)
+
+            node.setPos(graphics_view.backdrop.mapFromParent(graphics_view.last_click))
+            node.setPos(graphics_view.last_click)
+            graphics_view.addItem(node)
+            return node
+
+        # Add to class
+        name = "create_"+("".join(comp_name.split()))
+        setattr(graphics_view, name, partial(create, comp, comp_name))
+        func = getattr(graphics_view, name)
+
+        # Connect trigger for action
+        def create_command(name=name,func=func,graphics_view=graphics_view):
+            graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
+        action.triggered.connect(create_command)
+        graphics_view.sub_menus["composites"].addAction(action)
 
 def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, mod_filter=None):
     new_objects = {n: f for n, f in mod.__dict__.items() if inspect.isclass(f)

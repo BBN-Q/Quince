@@ -128,7 +128,7 @@ class NodeScene(QGraphicsScene):
         self.open_add_menu(event.screenPos())
 
     def generate_menus(self):
-        # Parse Auspex directly
+        # Parse Auspex modules directly
         parse_quince_modules(self)
 
     def load_yaml(self):

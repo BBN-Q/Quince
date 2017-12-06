@@ -372,6 +372,11 @@ class Node(QGraphicsRectItem):
         dict_repr['type']     = self.type
         return dict_repr
 
+class CompositeNode(Node):
+    """docstring for Node"""
+    def __init__(self, name, scene, parent=None):
+        super(CompositeNode, self).__init__(name, scene, parent=parent)
+
 class TitleText(QGraphicsTextItem):
     '''QGraphicsTextItem with textChanged() signal.'''
     textChanged = Signal(str)
