@@ -6,14 +6,6 @@
 
 import networkx as nx
 
-try:
-    import auspex.globals
-    auspex.globals.auspex_dummy_mode = True
-    from auspex.experiment import Experiment
-    from auspex.stream import DataStream, DataAxis, SweepAxis, DataStreamDescriptor, OutputConnector
-except ImportError as e:
-    print("Could not load Auspex because or error '{}'".format(str(e)))
-
 def generate_graph(wires, dag=False):
     edges = [(w.start_obj.parent.label.toPlainText(), w.end_obj.parent.label.toPlainText()) for w in wires]
     if dag:
@@ -72,7 +64,7 @@ def hierarchy_pos(G, root, width=600., vert_gap = 175, vert_loc = 0, xcenter = 0
         pos = {root:(xcenter,vert_loc)}
     else:
         pos[root] = (xcenter, vert_loc)
-    neighbors = G.neighbors(root)
+    neighbors = list(G.neighbors(root))
     if len(neighbors)!=0:
         dx = width/len(neighbors) 
         nextx = xcenter - width/2 - dx/2
