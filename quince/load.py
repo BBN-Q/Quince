@@ -106,19 +106,19 @@ def yaml_dump(data, filename):
     # Upon success
     move(filename+".tmp", filename)
 
-def load_from_yaml(graphics_view):
+def load_from_yaml(node_scene):
 
     name_changes = {'KernelIntegration': 'KernelIntegrator',
                     'DigitalDemod': 'Channelizer'}
 
-    graphics_view.settings, _        = yaml_load(graphics_view.window.meas_file)
-    graphics_view.filter_settings    = graphics_view.settings["filters"]
-    graphics_view.instr_settings     = graphics_view.settings["instruments"]
-    graphics_view.composite_settings = graphics_view.settings.get("composites", None)
+    node_scene.settings, _        = yaml_load(node_scene.window.meas_file)
+    node_scene.filter_settings    = node_scene.settings["filters"]
+    node_scene.instr_settings     = node_scene.settings["instruments"]
+    node_scene.composite_settings = node_scene.settings.get("composites", None)
 
     # Process the composite nodes and create menu items
-    if graphics_view.composite_settings:
-        parse_composite_nodes(graphics_view)
+    if node_scene.composite_settings:
+        parse_composite_nodes(node_scene)
 
     # Keep track of nodes we create
     loaded_filter_nodes    = {}
@@ -127,15 +127,15 @@ def load_from_yaml(graphics_view):
     new_wires              = []
 
     # Create and place the filters
-    for filt_name, filt_par in graphics_view.filter_settings.items():
+    for filt_name, filt_par in node_scene.filter_settings.items():
 
         filt_type = filt_par["type"]
         # Perform some translation
         if filt_type in name_changes.keys():
             filt_type = name_changes[filt_type]
         # See if the filter exists, and then create it
-        if hasattr(graphics_view, 'create_'+filt_type):
-            new_node = getattr(graphics_view, 'create_'+filt_type)()
+        if hasattr(node_scene, 'create_'+filt_type):
+            new_node = getattr(node_scene, 'create_'+filt_type)()
 
             # Enabled unless otherwise specified
             if 'enabled' not in filt_par.keys():
@@ -154,8 +154,8 @@ def load_from_yaml(graphics_view):
             new_node.setOpacity(0.0)
             try:
                 # Sometimes the settings get gunked up...
-                loc_x = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_x")
-                loc_y = graphics_view.qt_settings.value("node_positions/" + filt_name + "_pos_y")
+                loc_x = node_scene.qt_settings.value("node_positions/" + filt_name + "_pos_x")
+                loc_y = node_scene.qt_settings.value("node_positions/" + filt_name + "_pos_y")
                 # Windows is very confused about this data type:
                 loc_x = float(loc_x)
                 loc_y = float(loc_y)
@@ -163,13 +163,13 @@ def load_from_yaml(graphics_view):
             except:
                 print("Error when loading node position from QSettings...")
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos_x", new_node.pos().x())
-                graphics_view.qt_settings.setValue("node_positions/" + filt_name + "_pos_y", new_node.pos().y())
+                node_scene.qt_settings.setValue("node_positions/" + filt_name + "_pos_x", new_node.pos().x())
+                node_scene.qt_settings.setValue("node_positions/" + filt_name + "_pos_y", new_node.pos().y())
             new_node.label.setPlainText(filt_name)
             loaded_filter_nodes[filt_name] = new_node
 
     # Create and place the instruments
-    for instr_name, instr_par in graphics_view.instr_settings.items():
+    for instr_name, instr_par in node_scene.instr_settings.items():
 
         instr_type = instr_par["type"]
 
@@ -179,16 +179,16 @@ def load_from_yaml(graphics_view):
 
         # See if the filter exists, and then create it.
         # Assume filters are enabled unless otherwise noted.
-        if hasattr(graphics_view, 'create_'+instr_type):
-            new_node = getattr(graphics_view, 'create_'+instr_type)()
+        if hasattr(node_scene, 'create_'+instr_type):
+            new_node = getattr(node_scene, 'create_'+instr_type)()
             new_node.enabled = instr_par['enabled'] if 'enabled' in instr_par.keys() else True
             new_node.base_params = instr_par
             new_node.setOpacity(0.0)
             
             try:
                 # Sometimes the settings get gunked up...
-                loc_x = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_x")
-                loc_y = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_y")
+                loc_x = node_scene.qt_settings.value("node_positions/" + instr_name + "_pos_x")
+                loc_y = node_scene.qt_settings.value("node_positions/" + instr_name + "_pos_y")
                 # Windows is very confused about this data type:
                 loc_x = float(loc_x)
                 loc_y = float(loc_y)
@@ -196,8 +196,8 @@ def load_from_yaml(graphics_view):
             except:
                 print("Error when loading node position from QSettings...", )
                 new_node.setPos(np.random.random()*500-250, np.random.random()*500-250)
-                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos_x", new_node.pos().x())
-                graphics_view.qt_settings.setValue("node_positions/" + instr_name + "_pos_y", new_node.pos().y())
+                node_scene.qt_settings.setValue("node_positions/" + instr_name + "_pos_x", new_node.pos().x())
+                node_scene.qt_settings.setValue("node_positions/" + instr_name + "_pos_y", new_node.pos().y())
             new_node.label.setPlainText(instr_name)
             loaded_instr_nodes[instr_name] = new_node
 
@@ -206,7 +206,7 @@ def load_from_yaml(graphics_view):
         is the node name and the part after is the connector name. Otherwise, the
         connector name is just "source" and the source name is the node name."""
 
-        sources = [s.strip() for s in graphics_view.filter_settings[filt_name]["source"].split(",")]
+        sources = [s.strip() for s in node_scene.filter_settings[filt_name]["source"].split(",")]
         for source in sources:
 
             source    = source.split()
@@ -226,7 +226,7 @@ def load_from_yaml(graphics_view):
                         new_wire = Wire(start_node.outputs[conn_name])
                         new_wire.setOpacity(0.0)
                         new_wires.append(new_wire)
-                        graphics_view.addItem(new_wire)
+                        node_scene.addItem(new_wire)
 
                         # Add to start node
                         new_wire.set_start(start_node.outputs[conn_name].scenePos())
@@ -249,7 +249,7 @@ def load_from_yaml(graphics_view):
                         new_wire = Wire(start_node.outputs[conn_name])
                         new_wire.setOpacity(0.0)
                         new_wires.append(new_wire)
-                        graphics_view.addItem(new_wire)
+                        node_scene.addItem(new_wire)
 
                         # Add to start node
                         new_wire.set_start(start_node.outputs[conn_name].scenePos())
@@ -265,47 +265,47 @@ def load_from_yaml(graphics_view):
                 print("Could not find source for ", filt_name, ":", node_name, conn_name)
 
     # Stick everything in an animation group and ramp the opacity up to 1 (fade in)
-    graphics_view.anim_group = QParallelAnimationGroup()
+    node_scene.anim_group = QParallelAnimationGroup()
     for item in new_wires + list(loaded_instr_nodes.values()) + list(loaded_filter_nodes.values()):
         dummy = dummy_object_float(item.opacity, item.setOpacity)
         anim = QPropertyAnimation(dummy, bytes("dummy".encode("ascii")))
         anim.setDuration(300)
         anim.setStartValue(0.0)
         anim.setEndValue(1.0)
-        graphics_view.anim_group.addAnimation(anim)
-    graphics_view.anim_group.start()
+        node_scene.anim_group.addAnimation(anim)
+    node_scene.anim_group.start()
 
-def parse_composite_nodes(graphics_view):
-    comp_settings = graphics_view.composite_settings
+def parse_composite_nodes(node_scene):
+    comp_settings = node_scene.composite_settings
 
     # Add composites submenu
-    graphics_view.menu.addSeparator()
-    graphics_view.composites_menu = graphics_view.menu.addMenu("Composite Nodes")
-    graphics_view.sub_menus["composites"] = graphics_view.composites_menu
+    node_scene.menu.addSeparator()
+    node_scene.composites_menu = node_scene.menu.addMenu("Composite Nodes")
+    node_scene.sub_menus["composites"] = node_scene.composites_menu
     
     # Add special input and output connector node types
-    ci_action = QAction("Composite Input", graphics_view)
-    co_action = QAction("Composite Output", graphics_view)
-    graphics_view.sub_menus["composites"].addAction(ci_action)
-    graphics_view.sub_menus["composites"].addAction(co_action)
-    graphics_view.composites_menu.addSeparator()
+    ci_action = QAction("Composite Input", node_scene)
+    co_action = QAction("Composite Output", node_scene)
+    node_scene.sub_menus["composites"].addAction(ci_action)
+    node_scene.sub_menus["composites"].addAction(co_action)
+    node_scene.composites_menu.addSeparator()
 
     # Create creation functions and actions for each type
     for comp_name in sorted(comp_settings.keys()):
         comp = comp_settings[comp_name]
 
         # Create a QAction and add to the menu
-        action = QAction(comp_name, graphics_view)
+        action = QAction(comp_name, node_scene)
 
         # Create function for dropping node on canvas
         def create(settings, the_name):
-            node = CompositeNode(the_name, graphics_view)
+            node = CompositeNode(the_name, node_scene)
             node.cat_name = "composites"
 
             auspex_filter_objects = {}
             for filt_name, filt_set in settings["filters"].items():
                 print("Creating", filt_name)
-                auspex_filter_objects[filt_name] = graphics_view.auspex_objects[filt_set['type']]()
+                auspex_filter_objects[filt_name] = node_scene.auspex_objects[filt_set['type']]()
 
             # Add connectors based on the Filter's stated inputs and outputs
             for s in settings["outputs"]:
@@ -333,27 +333,27 @@ def parse_composite_nodes(graphics_view):
             node.type = the_name
 
             # See if names will be duplicated
-            node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]
+            node_names = [i.label.toPlainText() for i in node_scene.items() if isinstance(i, Node)]
             nan = next_available_name(node_names, the_name)
             node.label.setPlainText(nan)
 
-            node.setPos(graphics_view.backdrop.mapFromParent(graphics_view.last_click))
-            node.setPos(graphics_view.last_click)
-            graphics_view.addItem(node)
+            node.setPos(node_scene.backdrop.mapFromParent(node_scene.last_click))
+            node.setPos(node_scene.last_click)
+            node_scene.addItem(node)
             return node
 
         # Add to class
         name = "create_"+("".join(comp_name.split()))
-        setattr(graphics_view, name, partial(create, comp, comp_name))
-        func = getattr(graphics_view, name)
+        setattr(node_scene, name, partial(create, comp, comp_name))
+        func = getattr(node_scene, name)
 
         # Connect trigger for action
-        def create_command(name=name,func=func,graphics_view=graphics_view):
-            graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
+        def create_command(name=name,func=func,node_scene=node_scene):
+            node_scene.undo_stack.push(CommandAddNode(name, func, node_scene))
         action.triggered.connect(create_command)
-        graphics_view.sub_menus["composites"].addAction(action)
+        node_scene.sub_menus["composites"].addAction(action)
 
-def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, mod_filter=None):
+def parse_quince_module(mod_name, mod, base_class, node_scene, submenu=None, mod_filter=None):
     new_objects = {n: f for n, f in mod.__dict__.items() if inspect.isclass(f)
                                                             and issubclass(f, base_class)
                                                             and f != base_class}
@@ -365,11 +365,11 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, 
         if submenu:
             sm = submenu.addMenu(mod_name)
         else:
-            sm = graphics_view.menu.addMenu(mod_name)
-        graphics_view.sub_menus[mod_name] = sm
+            sm = node_scene.menu.addMenu(mod_name)
+        node_scene.sub_menus[mod_name] = sm
 
     # Have the view keep track of the object so we can look them up easily
-    graphics_view.auspex_objects.update(new_objects)
+    node_scene.auspex_objects.update(new_objects)
 
     # These haven't been instantiated, so the input and output
     # connectors should be a simple list in the class dictionary
@@ -377,11 +377,11 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, 
         obj = new_objects[obj_name]
 
         # Create a QAction and add to the menu
-        action = QAction(obj_name, graphics_view)
+        action = QAction(obj_name, node_scene)
 
         # Create function for dropping node on canvas
         def create(the_obj, the_name, the_category):
-            node = Node(the_name, graphics_view)
+            node = Node(the_name, node_scene)
             node.cat_name = the_category
             obj_instance = the_obj()
 
@@ -441,27 +441,27 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, 
             node.type = the_name
 
             # See if names will be duplicated
-            node_names = [i.label.toPlainText() for i in graphics_view.items() if isinstance(i, Node)]
+            node_names = [i.label.toPlainText() for i in node_scene.items() if isinstance(i, Node)]
             nan = next_available_name(node_names, the_name)
             node.label.setPlainText(nan)
 
-            node.setPos(graphics_view.backdrop.mapFromParent(graphics_view.last_click))
-            node.setPos(graphics_view.last_click)
-            graphics_view.addItem(node)
+            node.setPos(node_scene.backdrop.mapFromParent(node_scene.last_click))
+            node.setPos(node_scene.last_click)
+            node_scene.addItem(node)
             return node
 
         # Add to class
         name = "create_"+("".join(obj_name.split()))
-        setattr(graphics_view, name, partial(create, obj, obj_name, mod_name))
-        func = getattr(graphics_view, name)
+        setattr(node_scene, name, partial(create, obj, obj_name, mod_name))
+        func = getattr(node_scene, name)
 
         # Connect trigger for action
-        def create_command(name=name,func=func,graphics_view=graphics_view):
-            graphics_view.undo_stack.push(CommandAddNode(name, func, graphics_view))
+        def create_command(name=name,func=func,node_scene=node_scene):
+            node_scene.undo_stack.push(CommandAddNode(name, func, node_scene))
         action.triggered.connect(create_command)
-        graphics_view.sub_menus[mod_name].addAction(action)
+        node_scene.sub_menus[mod_name].addAction(action)
 
-def parse_quince_modules(graphics_view):
+def parse_quince_modules(node_scene):
     if NO_AUSPEX:
         return
 
@@ -481,14 +481,14 @@ def parse_quince_modules(graphics_view):
 
     for mod_name in sorted(filter_modules.keys(), key=lambda s: s.lower()):
         mod = filter_modules[mod_name]
-        parse_quince_module(mod_name, mod, Filter, graphics_view)
+        parse_quince_module(mod_name, mod, Filter, node_scene)
 
-    graphics_view.menu.addSeparator()
-    graphics_view.instruments_menu = graphics_view.menu.addMenu("instruments")
-    graphics_view.sub_menus["instruments"] = graphics_view.instruments_menu
+    node_scene.menu.addSeparator()
+    node_scene.instruments_menu = node_scene.menu.addMenu("instruments")
+    node_scene.sub_menus["instruments"] = node_scene.instruments_menu
 
     for mod_name in sorted(instrument_modules.keys(), key=lambda s: s.lower()):
         mod = instrument_modules[mod_name]
-        parse_quince_module(mod_name, mod, Instrument, graphics_view,
-                            submenu=graphics_view.instruments_menu,
+        parse_quince_module(mod_name, mod, Instrument, node_scene,
+                            submenu=node_scene.instruments_menu,
                             mod_filter=lambda m: hasattr(m, 'instrument_type') and "Digitizer" in m.instrument_type)
