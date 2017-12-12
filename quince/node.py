@@ -376,6 +376,7 @@ class CompositeNode(Node):
     """docstring for Node"""
     def __init__(self, name, scene, parent=None):
         super(CompositeNode, self).__init__(name, scene, parent=parent)
+        self.auspex_filter_objects = {}
 
 class TitleText(QGraphicsTextItem):
     '''QGraphicsTextItem with textChanged() signal.'''

@@ -430,6 +430,7 @@ class NodeWindow(QMainWindow):
         elif len(selected_nodes) == 0:
             self.set_status("No composite nodes selected.")
             return 
+        node = selected_nodes[0]
 
         current_level = max(self.hidden_items.keys())
         if current_level < 3:
@@ -442,6 +443,11 @@ class NodeWindow(QMainWindow):
 
         for hi in self.hidden_items[current_level]:
             hi.setVisible(False)
+
+        for name, filt in node.auspex_filter_objects.items():
+            getattr(self.scene, "create_"+filt.__class__.__name__)()
+            
+            
 
     def stop_edit(self):
         print(self.hidden_items)

@@ -278,6 +278,8 @@ def load_from_yaml(node_scene):
 def parse_composite_nodes(node_scene):
     comp_settings = node_scene.composite_settings
 
+    # TODO: remove old composites submenu
+
     # Add composites submenu
     node_scene.menu.addSeparator()
     node_scene.composites_menu = node_scene.menu.addMenu("Composite Nodes")
@@ -302,31 +304,63 @@ def parse_composite_nodes(node_scene):
             node = CompositeNode(the_name, node_scene)
             node.cat_name = "composites"
 
-            auspex_filter_objects = {}
             for filt_name, filt_set in settings["filters"].items():
-                print("Creating", filt_name)
-                auspex_filter_objects[filt_name] = node_scene.auspex_objects[filt_set['type']]()
+                node.auspex_filter_objects[filt_name] = node_scene.auspex_objects[filt_set['type']]()
+                node.composite_settings = settings
 
             # Add connectors based on the Filter's stated inputs and outputs
             for s in settings["outputs"]:
                 node_name, conn_name = s.split()
                 conn = CompositeConnector(conn_name, 'output')
-                # TODO: associate with auspex object
-                conn.auspex_object = None
+                conn.auspex_object = node.auspex_filter_objects[node_name].output_connectors[conn_name]
                 node.add_output(conn)
             for s in settings["inputs"]:
                 node_name, conn_name = s.split()
                 conn = CompositeConnector(conn_name, 'input')
-                # TODO: associate with auspex object
+                conn.auspex_object = node.auspex_filter_objects[node_name].input_connectors[conn_name]
                 conn.auspex_object = None
                 node.add_input(conn)
             for s in settings["parameters"]:
                 node_name, param_name = s.split()
-                quince_param = StringParameter(param_name)
-                # TODO: dig into the auspex objects
+                auspex_param = {n.name: n for n in node.auspex_filter_objects[node_name].quince_parameters}[param_name]
+
+                if isinstance(auspex_param, auspex.parameter.FloatParameter) or isinstance(auspex_param, auspex.parameter.IntParameter):
+                    if auspex_param.value_range:
+                        low  = min(auspex_param.value_range)
+                        high = max(auspex_param.value_range)
+                    else:
+                        low = -1e15
+                        high = 1e15
+                        auspex_param.increment = 2e14
+
+                    if not auspex_param.increment:
+                        auspex_param.increment = 0.05*(high-low)
+
+                    snap = auspex_param.snap
+
+                if isinstance(auspex_param, auspex.parameter.FloatParameter):
+                    quince_param = NumericalParameter(auspex_param.name, float,
+                                    low, high, auspex_param.increment, auspex_param.snap)
+                elif isinstance(auspex_param, auspex.parameter.IntParameter):
+                    quince_param = NumericalParameter(auspex_param.name, int,
+                                    low, high, auspex_param.increment, auspex_param.snap)
+                elif isinstance(auspex_param, auspex.parameter.BoolParameter):
+                    quince_param = BooleanParameter(auspex_param.name)
+                elif isinstance(auspex_param, auspex.parameter.FilenameParameter):
+                    quince_param = FilenameParameter(auspex_param.name)
+                elif isinstance(auspex_param, auspex.parameter.Parameter):
+                    if auspex_param.allowed_values:
+                        quince_param = ComboParameter(auspex_param.name, auspex_param.allowed_values)
+                    else:
+                        quince_param = StringParameter(auspex_param.name)
+                if hasattr(auspex_param, 'default') and auspex_param.default:
+                    quince_param.set_value(auspex_param.default)
+
                 quince_param.has_input = False
-                # quince_param.auspex_object = auspex_param
+                quince_param.auspex_object = auspex_param
                 node.add_parameter(quince_param)
+
+
 
             # Set the class and module info
             # node.auspex_object = obj_instance
@@ -452,6 +486,7 @@ def parse_quince_module(mod_name, mod, base_class, node_scene, submenu=None, mod
 
         # Add to class
         name = "create_"+("".join(obj_name.split()))
+        print(node_scene, name)
         setattr(node_scene, name, partial(create, obj, obj_name, mod_name))
         func = getattr(node_scene, name)
 
