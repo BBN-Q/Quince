@@ -118,7 +118,6 @@ def load_from_yaml(graphics_view):
 
     # Process the composite nodes and create menu items
     if graphics_view.composite_settings:
-        print('asdas')
         parse_composite_nodes(graphics_view)
 
     # Keep track of nodes we create
@@ -126,10 +125,6 @@ def load_from_yaml(graphics_view):
     loaded_instr_nodes     = {} 
     loaded_composite_nodes = {}
     new_wires              = []
-
-    # # Create Node representations of composite nodes
-    # for comp_name, comp_par in graphics_view.composite_settings.items():
-
 
     # Create and place the filters
     for filt_name, filt_par in graphics_view.filter_settings.items():
@@ -287,6 +282,13 @@ def parse_composite_nodes(graphics_view):
     graphics_view.menu.addSeparator()
     graphics_view.composites_menu = graphics_view.menu.addMenu("Composite Nodes")
     graphics_view.sub_menus["composites"] = graphics_view.composites_menu
+    
+    # Add special input and output connector node types
+    ci_action = QAction("Composite Input", graphics_view)
+    co_action = QAction("Composite Output", graphics_view)
+    graphics_view.sub_menus["composites"].addAction(ci_action)
+    graphics_view.sub_menus["composites"].addAction(co_action)
+    graphics_view.composites_menu.addSeparator()
 
     # Create creation functions and actions for each type
     for comp_name in sorted(comp_settings.keys()):
@@ -302,7 +304,8 @@ def parse_composite_nodes(graphics_view):
 
             auspex_filter_objects = {}
             for filt_name, filt_set in settings["filters"].items():
-                auspex_filter_objects[filt_name] = None
+                print("Creating", filt_name)
+                auspex_filter_objects[filt_name] = graphics_view.auspex_objects[filt_set['type']]()
 
             # Add connectors based on the Filter's stated inputs and outputs
             for s in settings["outputs"]:
@@ -364,6 +367,9 @@ def parse_quince_module(mod_name, mod, base_class, graphics_view, submenu=None, 
         else:
             sm = graphics_view.menu.addMenu(mod_name)
         graphics_view.sub_menus[mod_name] = sm
+
+    # Have the view keep track of the object so we can look them up easily
+    graphics_view.auspex_objects.update(new_objects)
 
     # These haven't been instantiated, so the input and output
     # connectors should be a simple list in the class dictionary

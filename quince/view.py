@@ -50,6 +50,8 @@ class NodeScene(QGraphicsScene):
         self.addItem(self.backdrop)
         self.view = None
 
+        self.auspex_objects = {}
+
         self.menu = QMenu()
         self.sub_menus = {}
         self.generate_menus()
@@ -324,6 +326,16 @@ class NodeWindow(QMainWindow):
         redoAction.setStatusTip('Redo')
         redoAction.triggered.connect(self.redo)
 
+        startEditCompositeAction = QAction('&Edit Composite', self)
+        startEditCompositeAction.setShortcut('Ctrl+L')
+        startEditCompositeAction.setStatusTip('Edit Composite')
+        startEditCompositeAction.triggered.connect(self.start_edit)
+
+        stopEditCompositeAction = QAction('&Stop Editing Composite', self)
+        stopEditCompositeAction.setShortcut('Shift+Ctrl+L')
+        stopEditCompositeAction.setStatusTip('Stop Editing Composite')
+        stopEditCompositeAction.triggered.connect(self.stop_edit)
+
         debugAction = QAction('&Debug', self)
         debugAction.setShortcut('Shift+Ctrl+Alt+D')
         debugAction.setStatusTip('Debug!')
@@ -349,8 +361,16 @@ class NodeWindow(QMainWindow):
         editMenu.addSeparator()
         editMenu.addAction(undoAction)
         editMenu.addAction(redoAction)
+        editMenu.addAction(startEditCompositeAction)
+        editMenu.addAction(stopEditCompositeAction)
 
         helpMenu.addAction(debugAction)
+        
+        # Prepare for composite node editing
+        self.hidden_items = {0: None}
+
+        # Different colors for each depth of composite editing
+        self.editing_colors = [QColor(60,60,60), QColor(40,70,40), QColor(40,40,70)]
 
         # Setup layout
         self.hbox = QHBoxLayout()
@@ -401,6 +421,50 @@ class NodeWindow(QMainWindow):
 
     def debug(self):
         import ipdb; ipdb.set_trace()
+
+    def start_edit(self):
+        selected_nodes = [i for i in self.scene.items() if isinstance(i, CompositeNode) and i.isSelected()]
+        if len(selected_nodes) > 1:
+            self.set_status("Cannot edit multiple composite nodes. Select a single node.")
+            return
+        elif len(selected_nodes) == 0:
+            self.set_status("No composite nodes selected.")
+            return 
+
+        current_level = max(self.hidden_items.keys())
+        if current_level < 3:
+            self.scene.setBackgroundBrush(QBrush(self.editing_colors[current_level+1]))
+        excluded = []
+        for level in range(0,current_level):
+            excluded.extend(self.hidden_items[level])
+        self.hidden_items[current_level] = [i for i in self.scene.items() if isinstance(i, (Node,Wire)) and i not in excluded]
+        self.hidden_items[current_level+1] = None
+
+        for hi in self.hidden_items[current_level]:
+            hi.setVisible(False)
+
+    def stop_edit(self):
+        print(self.hidden_items)
+        current_level = max(self.hidden_items.keys())
+        if current_level > 0:
+            if current_level-1 < 3:
+                self.scene.setBackgroundBrush(QBrush(self.editing_colors[current_level-1]))
+            
+            excluded = []
+            for level in range(0,current_level):
+                excluded.extend(self.hidden_items[level])
+
+            # Capture then remove new nodes
+            new_nodes = [i for i in self.scene.items() if isinstance(i, (Node)) and i not in excluded]
+            # TODO: capture diagram and turn into YAML, or edit YAML template
+
+            # Remove new nodes
+            CommandDeleteNodes(new_nodes, self.scene).redo()
+
+            # Restore old nodes
+            for hi in self.hidden_items[current_level-1]:
+                hi.setVisible(True)
+            self.hidden_items.pop(current_level)
 
     def load_yaml(self, meas_file):
         self.set_status("Loading YAML configuration files...")
