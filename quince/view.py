@@ -363,7 +363,7 @@ class NodeWindow(QMainWindow):
         helpMenu.addAction(debugAction)
         
         # Prepare for composite node editing
-        self.hidden_items = {0: None}
+        self.hidden_items = {0: []}
 
         # Different colors for each depth of composite editing
         self.editing_colors = [QColor(60,60,60), QColor(40,70,40), QColor(40,40,70)]
@@ -437,16 +437,30 @@ class NodeWindow(QMainWindow):
         self.hidden_items[current_level] = [i for i in self.scene.items() if isinstance(i, (Node,Wire)) and i not in excluded]
         self.hidden_items[current_level+1] = None
 
+        # Hide the previous level
         for hi in self.hidden_items[current_level]:
             hi.setVisible(False)
 
+        # Create the constituent nodes
+        nodes = {}
         for name, filt in node.auspex_filter_objects.items():
-            getattr(self.scene, "create_"+filt.__class__.__name__)()
+            new_node = getattr(self.scene, "create_"+filt.__class__.__name__)()
+            nodes[name] = new_node
 
+            # Set the quince parameters
+            new_node.base_params = {}
+            for k, v in node.composite_settings["filters"][name].items():
+                if k in new_node.parameters.keys():
+                    new_node.parameters[k].set_value(v)
+                else:
+                    new_node.base_params[k] = v
 
+        # Create inputs for parameters that are exposes in the composite node
+        for p in node.composite_settings["parameters"]:
+            node_name, param_name = p.split()
+            nodes[node_name].parameters[param_name].has_input = True
 
     def stop_edit(self):
-        print(self.hidden_items)
         current_level = max(self.hidden_items.keys())
         if current_level > 0:
             if current_level-1 < 3:
@@ -467,6 +481,8 @@ class NodeWindow(QMainWindow):
             for hi in self.hidden_items[current_level-1]:
                 hi.setVisible(True)
             self.hidden_items.pop(current_level)
+            self.hidden_items[current_level-1] = []
+            print(self.hidden_items)
 
     def load_yaml(self, meas_file):
         self.set_status("Loading YAML configuration files...")

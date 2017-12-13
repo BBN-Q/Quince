@@ -377,6 +377,7 @@ class CompositeNode(Node):
     def __init__(self, name, scene, parent=None):
         super(CompositeNode, self).__init__(name, scene, parent=parent)
         self.auspex_filter_objects = {}
+        self.composite_settings = {}
 
 class TitleText(QGraphicsTextItem):
     '''QGraphicsTextItem with textChanged() signal.'''

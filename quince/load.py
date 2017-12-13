@@ -304,6 +304,7 @@ def parse_composite_nodes(node_scene):
         def create(settings, the_name):
             node = CompositeNode(the_name, node_scene)
             node.cat_name = "composites"
+            node.composite_settings = comp
 
             for filt_name, filt_set in settings["filters"].items():
                 node.auspex_filter_objects[filt_name] = node_scene.auspex_objects[filt_set['type']]()
@@ -360,8 +361,6 @@ def parse_composite_nodes(node_scene):
                 quince_param.has_input = False
                 quince_param.auspex_object = auspex_param
                 node.add_parameter(quince_param)
-
-
 
             # Set the class and module info
             # node.auspex_object = obj_instance
@@ -487,7 +486,6 @@ def parse_quince_module(mod_name, mod, base_class, node_scene, submenu=None, mod
 
         # Add to class
         name = "create_"+("".join(obj_name.split()))
-        print(node_scene, name)
         setattr(node_scene, name, partial(create, obj, obj_name, mod_name))
         func = getattr(node_scene, name)
 
