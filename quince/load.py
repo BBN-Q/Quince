@@ -221,46 +221,18 @@ def load_from_yaml(node_scene):
             if node_name in loaded_filter_nodes.keys():
                 start_node = loaded_filter_nodes[node_name]
                 if conn_name in start_node.outputs.keys():
-                    if 'sink' in node.inputs.keys():
-                        # Create wire and register with scene
-                        new_wire = Wire(start_node.outputs[conn_name])
-                        new_wire.setOpacity(0.0)
+                    new_wire = create_wire_between(start_node, node, node_scene, conn_name=conn_name)
+                    if new_wire:
                         new_wires.append(new_wire)
-                        node_scene.addItem(new_wire)
-
-                        # Add to start node
-                        new_wire.set_start(start_node.outputs[conn_name].scenePos())
-                        start_node.outputs[conn_name].wires_out.append(new_wire)
-
-                        # Add to end node
-                        new_wire.end_obj = node.inputs['sink']
-                        new_wire.set_end(node.inputs['sink'].scenePos())
-                        node.inputs['sink'].wires_in.append(new_wire)
-                    else:
-                        print("Could not find sink connector in", filt_name)
                 else:
                     print("Could not find source connector ", conn_name, "for node", node_name)
 
             elif node_name in loaded_instr_nodes.keys():
                 start_node = loaded_instr_nodes[node_name]
                 if conn_name in start_node.outputs.keys():
-                    if 'sink' in node.inputs.keys():
-                        # Create wire and register with scene
-                        new_wire = Wire(start_node.outputs[conn_name])
-                        new_wire.setOpacity(0.0)
+                    new_wire = create_wire_between(start_node, node, node_scene, conn_name=conn_name)
+                    if new_wire:
                         new_wires.append(new_wire)
-                        node_scene.addItem(new_wire)
-
-                        # Add to start node
-                        new_wire.set_start(start_node.outputs[conn_name].scenePos())
-                        start_node.outputs[conn_name].wires_out.append(new_wire)
-
-                        # Add to end node
-                        new_wire.end_obj = node.inputs['sink']
-                        new_wire.set_end(node.inputs['sink'].scenePos())
-                        node.inputs['sink'].wires_in.append(new_wire)
-                    else:
-                        print("Could not find sink connector ", conn_name)
             else:
                 print("Could not find source for ", filt_name, ":", node_name, conn_name)
 
@@ -274,6 +246,26 @@ def load_from_yaml(node_scene):
         anim.setEndValue(1.0)
         node_scene.anim_group.addAnimation(anim)
     node_scene.anim_group.start()
+
+def create_wire_between(start_node, end_node, scene, conn_name="source", opacity=0.0):
+    if 'sink' in end_node.inputs.keys():
+        # Create wire and register with scene
+        new_wire = Wire(start_node.outputs[conn_name])
+        new_wire.setOpacity(opacity)
+        scene.addItem(new_wire)
+
+        # Add to start node
+        new_wire.set_start(start_node.outputs[conn_name].scenePos())
+        start_node.outputs[conn_name].wires_out.append(new_wire)
+
+        # Add to end node
+        new_wire.end_obj = end_node.inputs['sink']
+        new_wire.set_end(end_node.inputs['sink'].scenePos())
+        end_node.inputs['sink'].wires_in.append(new_wire)
+        return new_wire
+    else:
+        print("Could not find sink connector on", end_node)
+        return None
 
 def parse_composite_nodes(node_scene):
     comp_settings = node_scene.composite_settings
