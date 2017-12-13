@@ -55,11 +55,7 @@ class NodeScene(QGraphicsScene):
         self.menu = QMenu()
         self.sub_menus = {}
         self.generate_menus()
-
         self.menu.addSeparator()
-        clear_wires = QAction('Clear Wires', self)
-        clear_wires.triggered.connect(self.clear_wires)
-        self.menu.addAction(clear_wires)
 
         self.last_click = self.backdrop.pos()
 
@@ -446,8 +442,8 @@ class NodeWindow(QMainWindow):
 
         for name, filt in node.auspex_filter_objects.items():
             getattr(self.scene, "create_"+filt.__class__.__name__)()
-            
-            
+
+
 
     def stop_edit(self):
         print(self.hidden_items)

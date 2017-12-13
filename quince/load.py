@@ -278,10 +278,11 @@ def load_from_yaml(node_scene):
 def parse_composite_nodes(node_scene):
     comp_settings = node_scene.composite_settings
 
-    # TODO: remove old composites submenu
+    # Remove old composites submenu
+    if hasattr(node_scene, "composites_menu"):
+        node_scene.menu.removeAction(node_scene.composites_menu.menuAction())
 
     # Add composites submenu
-    node_scene.menu.addSeparator()
     node_scene.composites_menu = node_scene.menu.addMenu("Composite Nodes")
     node_scene.sub_menus["composites"] = node_scene.composites_menu
     
