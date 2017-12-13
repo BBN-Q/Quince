@@ -443,6 +443,7 @@ class NodeWindow(QMainWindow):
 
         # Create the constituent nodes
         nodes = {}
+        new_wires = []
         for name, filt in node.auspex_filter_objects.items():
             new_node = getattr(self.scene, "create_"+filt.__class__.__name__)()
             nodes[name] = new_node
@@ -455,10 +456,37 @@ class NodeWindow(QMainWindow):
                 else:
                     new_node.base_params[k] = v
 
+        for n_name, n_node in nodes.items():
+
+            source_and_conn = n_node.base_params["source"].split()
+            conn_name = "source" if len(source_and_conn) == 1 else source_and_conn[1]
+            source_name = source_and_conn[0]
+
+            print(source_name, conn_name)
+
+            if source_name == "__comp_input__":
+                continue
+            if source_name not in nodes.keys():
+                print("Invalid source specified for", n_node)
+                continue
+
+            new_wires.append(create_wire_between(nodes[source_name], n_node, self.scene, conn_name=conn_name))
+
         # Create inputs for parameters that are exposes in the composite node
         for p in node.composite_settings["parameters"]:
             node_name, param_name = p.split()
             nodes[node_name].parameters[param_name].has_input = True
+
+        # Stick everything in an animation group and ramp the opacity up to 1 (fade in)
+        self.scene.anim_group = QParallelAnimationGroup()
+        for item in new_wires + list(nodes.values()):
+            dummy = dummy_object_float(item.opacity, item.setOpacity)
+            anim = QPropertyAnimation(dummy, bytes("dummy".encode("ascii")))
+            anim.setDuration(300)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            self.scene.anim_group.addAnimation(anim)
+        self.scene.anim_group.start()
 
     def stop_edit(self):
         current_level = max(self.hidden_items.keys())
