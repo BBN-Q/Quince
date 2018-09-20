@@ -11,6 +11,7 @@ from qtpy.QtWidgets import *
 
 import glob
 import time
+import os
 import os.path
 import numpy as np
 
@@ -188,7 +189,7 @@ class NodeScene(QGraphicsScene):
                     if section=="instruments" and "rx_channels" not in self.settings[section][name].keys():
                         continue
                     self.settings[section].pop(name)
-      
+
         self.window.ignore_file_updates = True
         self.window.ignore_timer.start()
         yaml_dump(self.settings, self.window.meas_file)
@@ -408,7 +409,7 @@ class NodeWindow(QMainWindow):
         self.meas_file  = meas_file
 
         # Perform a preliminary loading to find all of the connected files...
-        _, self.filenames = yaml_load(self.meas_file)
+        _, self.filenames, self.dirname = yaml_load(self.meas_file)
 
         # Delay timer to avoid multiple firings
         self.update_timer = QTimer(self)
@@ -425,9 +426,17 @@ class NodeWindow(QMainWindow):
 
         # Establish File Watchers for these config files:
         self.watcher = QFileSystemWatcher()
-        for f in self.filenames:
-            self.watcher.addPath(f)
-        self.watcher.fileChanged.connect(self.yaml_needs_update)
+
+        # Note many editors make copies and delete files.  This confuses the
+        # file watchers in POSIX enviroments especially, so we just watch the
+        # config directory for changes in all non-Windows cases.
+        if (os.name == 'nt'):
+            for f in self.filenames:
+                self.watcher.addPath(f)
+            self.watcher.fileChanged.connect(self.yaml_needs_update)
+        else:
+            self.watcher.addPath(self.dirname)
+            self.watcher.directoryChanged.connect(self.yaml_needs_update)
 
         self.update_timer.start()
 

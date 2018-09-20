@@ -97,7 +97,8 @@ def yaml_load(filename):
         filenames = load.filenames
         load.dispose()
     filenames.append(os.path.abspath(filename))
-    return code, filenames
+    dirname = os.path.dirname(filename)
+    return code, filenames, dirname
 
 def yaml_dump(data, filename):
     with open(filename+".tmp", 'w') as fid:
@@ -111,7 +112,7 @@ def load_from_yaml(graphics_view):
     name_changes = {'KernelIntegration': 'KernelIntegrator',
                     'DigitalDemod': 'Channelizer'}
 
-    graphics_view.settings, _     = yaml_load(graphics_view.window.meas_file)
+    graphics_view.settings, _, _     = yaml_load(graphics_view.window.meas_file)
     graphics_view.filter_settings = graphics_view.settings["filters"]
     graphics_view.instr_settings  = graphics_view.settings["instruments"]
 
@@ -177,7 +178,7 @@ def load_from_yaml(graphics_view):
             new_node.enabled = instr_par['enabled'] if 'enabled' in instr_par.keys() else True
             new_node.base_params = instr_par
             new_node.setOpacity(0.0)
-            
+
             try:
                 # Sometimes the settings get gunked up...
                 loc_x = graphics_view.qt_settings.value("node_positions/" + instr_name + "_pos_x")
