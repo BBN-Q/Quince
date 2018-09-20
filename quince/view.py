@@ -425,10 +425,10 @@ class NodeWindow(QMainWindow):
 
         # Establish File Watchers for these config files:
         self.watcher = QFileSystemWatcher()
+        # Note many editors make copies and delete files.  This confuses the
+        # file watchers in linux especially, so we just watch the config
+        # directory for changes
         self.watcher.addPath(self.dirname)
-        for f in self.filenames:
-            self.watcher.addPath(f)
-        #self.watcher.fileChanged.connect(self.yaml_needs_update)
         self.watcher.directoryChanged.connect(self.yaml_needs_update)
 
         self.update_timer.start()
