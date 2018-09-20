@@ -11,7 +11,7 @@ from qtpy.QtWidgets import *
 
 import glob
 import time
-import os.name
+import os
 import os.path
 import numpy as np
 
