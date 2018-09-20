@@ -11,6 +11,7 @@ from qtpy.QtWidgets import *
 
 import glob
 import time
+import os.name
 import os.path
 import numpy as np
 
@@ -425,11 +426,17 @@ class NodeWindow(QMainWindow):
 
         # Establish File Watchers for these config files:
         self.watcher = QFileSystemWatcher()
+
         # Note many editors make copies and delete files.  This confuses the
-        # file watchers in linux especially, so we just watch the config
-        # directory for changes
-        self.watcher.addPath(self.dirname)
-        self.watcher.directoryChanged.connect(self.yaml_needs_update)
+        # file watchers in POSIX enviroments especially, so we just watch the
+        # config directory for changes in all non-Windows cases.
+        if (os.name == 'nt'):
+            for f in self.filenames:
+                self.watcher.addPath(f)
+            self.watcher.fileChanged.connect(self.yaml_needs_update)
+        else:
+            self.watcher.addPath(self.dirname)
+            self.watcher.directoryChanged.connect(self.yaml_needs_update)
 
         self.update_timer.start()
 
